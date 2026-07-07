@@ -22,11 +22,12 @@ CORS(app)
 # environment and the app will use that instead.
 # ------------------------------------------------------------------
 DB_CONFIG = {
-    "host":     os.environ.get("DB_HOST") or os.environ.get("MYSQLHOST", "localhost"),
-    "user":     os.environ.get("DB_USER") or os.environ.get("MYSQLUSER", "root"),
-    "password": os.environ.get("DB_PASSWORD") or os.environ.get("MYSQLPASSWORD", ""),
-    "database": os.environ.get("DB_NAME") or os.environ.get("MYSQLDATABASE", "coursedb"),
-    "port":     int(os.environ.get("DB_PORT") or os.environ.get("MYSQLPORT", "3306"))
+    "host":     os.environ.get("MYSQLHOST") or os.environ.get("DB_HOST", "localhost"),
+    "user":     os.environ.get("MYSQLUSER") or os.environ.get("DB_USER", "root"),
+    "password": os.environ.get("MYSQLPASSWORD") or os.environ.get("DB_PASSWORD", ""),
+    "database": os.environ.get("MYSQLDATABASE") or os.environ.get("DB_NAME", "coursedb"),
+    "port":     int(os.environ.get("MYSQLPORT") or os.environ.get("DB_PORT", "3306")),
+    "connection_timeout": 10
 }
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -229,6 +230,26 @@ def serve_frontend_asset(filename):
     if filename in FRONTEND_FILES:
         return send_from_directory(BASE_DIR, filename)
     abort(404)
+
+
+@app.route("/api/health", methods=["GET"])
+def health_check():
+    conn = get_db()
+    if not conn:
+        return jsonify({
+            "success": False,
+            "database": "disconnected",
+            "host": DB_CONFIG["host"],
+            "database_name": DB_CONFIG["database"]
+        }), 500
+
+    conn.close()
+    return jsonify({
+        "success": True,
+        "database": "connected",
+        "host": DB_CONFIG["host"],
+        "database_name": DB_CONFIG["database"]
+    })
 
 
 # ==================================================================
