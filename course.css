@@ -126,10 +126,10 @@ body {
 
 .form-box {
     position: relative;
-    width: min(100%, 520px);
+    width: min(100%, 512px);
     height: 560px;
     overflow: hidden;
-    padding: 36px 30px;
+    padding: 34px 0;
     background: var(--surface-soft);
     border: 1px solid rgba(255, 255, 255, .72);
     border-radius: 8px;
@@ -149,14 +149,15 @@ body {
 .register-container {
     position: absolute;
     top: 34px;
-    width: calc(100% - 60px);
+    width: calc(100% - 8px);
+    padding: 0 26px;
     display: flex;
     flex-direction: column;
     transition: .45s ease-in-out;
 }
 
 .login-container {
-    left: 30px;
+    left: 4px;
 }
 
 .register-container {
@@ -386,17 +387,18 @@ header {
 
     .form-box {
         height: 620px;
-        padding: 28px 18px;
+        padding: 28px 0;
     }
 
     .login-container,
     .register-container {
         top: 30px;
-        width: calc(100% - 36px);
+        width: calc(100% - 8px);
+        padding: 0 14px;
     }
 
     .login-container {
-        left: 18px;
+        left: 4px;
     }
 
     .two-forms {
