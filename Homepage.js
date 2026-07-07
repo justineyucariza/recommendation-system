@@ -1,7 +1,13 @@
 const API_BASE = (() => {
+  const RAILWAY_API_BASE = "https://web-production-21520.up.railway.app";
   const { protocol, hostname, port } = window.location;
   const isLocalFile = protocol === "file:";
   const isLocalHost = ["localhost", "127.0.0.1", ""].includes(hostname);
+  const isGithubPages = hostname.endsWith("github.io");
+
+  if (isGithubPages) {
+    return RAILWAY_API_BASE;
+  }
 
   if (isLocalFile || (isLocalHost && port && port !== "5000")) {
     return "http://127.0.0.1:5000";

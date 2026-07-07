@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="course.css">
+    <link rel="icon" href="Acadsync.jpg">
     <title>College Of St. Catherine Course Recommendation</title>
 </head>
 <body>
@@ -166,9 +167,15 @@
     var registerForm  = document.getElementById("register");
 
     const API_BASE = (() => {
+        const RAILWAY_API_BASE = "https://web-production-21520.up.railway.app";
         const { protocol, hostname, port } = window.location;
         const isLocalFile = protocol === "file:";
         const isLocalHost = ["localhost", "127.0.0.1", ""].includes(hostname);
+        const isGithubPages = hostname.endsWith("github.io");
+
+        if (isGithubPages) {
+            return RAILWAY_API_BASE;
+        }
 
         if (isLocalFile || (isLocalHost && port && port !== "5000")) {
             return "http://127.0.0.1:5000";
