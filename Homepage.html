@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>AcadSync | AI Course Recommendation System</title>
+
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="Homepage.css">
+
+</head>
+
+<body>
+
+    
+
+    <div id="notification"
+         class="notification">
+    </div>
+
+    
+
+    <header class="main-header">
+
+        <div class="container header-flex">
+
+            
+
+            <div class="avatar-wrapper">
+
+                <div class="avatar">
+
+                    <img
+                        id="headerAvatar"
+                        class="avatar-image hidden"
+                        alt="Student profile picture">
+
+                    <span class="avatar-placeholder" id="headerInitials">
+                        --
+                    </span>
+
+                </div>
+
+            </div>
+
+            
+
+            <div class="user-details">
+
+                <h1 class="user-name" id="headerName">
+
+                    Loading...
+
+                </h1>
+
+                <p class="user-meta" id="headerMeta">
+
+                    &nbsp;
+
+                </p>
+
+                <div class="action-buttons">
+
+                    <button
+                        id="settingsBtn"
+                        class="btn btn-blue"
+                        type="button">
+
+                        ⚙️ Settings
+
+                    </button>
+
+                    <button
+                        id="logoutBtn"
+                        class="btn btn-red"
+                        type="button">
+
+                        ↪ Logout
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </header>
+
+    
+
+    <nav class="main-nav">
+
+        <div class="container nav-container">
+
+            <button
+                type="button"
+                class="nav-item active"
+                onclick="switchTab(0)">
+
+                🏠 HOME
+
+            </button>
+
+            <button
+                type="button"
+                class="nav-item"
+                onclick="switchTab(1)">
+
+                📚 COURSE CATALOG
+
+            </button>
+
+            <button
+                type="button"
+                class="nav-item"
+                onclick="switchTab(2)">
+
+                🤖 ASSESSMENT QUIZ
+
+            </button>
+
+            <button
+                type="button"
+                class="nav-item"
+                onclick="switchTab(3)">
+
+                🏆 LEADERBOARD
+
+            </button>
+
+        </div>
+
+    </nav>
+
+    
+
+    <div class="portal-body-wrapper">
+
+        <main class="dashboard-content">
+
+            <div class="container content-layout">
+
+                
+
+                <aside
+                    id="sidebar-filters"
+                    class="sidebar hidden">
+
+                    <div class="filter-header">
+
+                        📊 Filters
+
+                    </div>
+
+                    <ul class="filter-list">
+
+                        <li
+                            class="filter-opt active"
+                            data-filter="all">
+
+                            All Courses
+
+                        </li>
+
+                        <li
+                            class="filter-opt"
+                            data-filter="tourism">
+
+                            BS Tourism
+
+                        </li>
+
+                        <li
+                            class="filter-opt"
+                            data-filter="marketing">
+
+                            BS Marketing
+
+                        </li>
+
+                        <li
+                            class="filter-opt"
+                            data-filter="it">
+
+                            BS Information Technology
+
+                        </li>
+
+                        <li
+                            class="filter-opt"
+                            data-filter="beed">
+
+                            Bachelor of Elementary Education
+
+                        </li>
+
+                        <li
+                            class="filter-opt"
+                            data-filter="bsed">
+
+                            Bachelor of Secondary Education
+
+                        </li>
+
+                        <li
+                            class="filter-opt"
+                            data-filter="crim">
+
+                            BS Criminology
+
+                        </li>
+
+                    </ul>
+
+                </aside>
+
+                
+
+                <section class="main-display">
+
+                    
+
+                    <div
+                        id="search-container"
+                        class="search-bar-container hidden">
+
+                        <input
+                            id="course-search-input"
+                            type="text"
+                            placeholder="Search courses..."
+                            autocomplete="off"
+                            oninput="handleSearchAndFilter()">
+
+                    </div>
+
+                    
+
+                    <div id="home-tab-view">
+
+                        
+
+                        <div
+                            id="welcome-banner-wrapper"
+                            class="welcome-banner">
+
+                            <div class="banner-accent">
+
+                                Welcome to AcadSync!
+
+                            </div>
+
+                            <div class="banner-body">
+
+                                <p class="semester-year">
+
+                                    2025 – 2026
+
+                                </p>
+
+                                <p class="semester-term">
+
+                                    First Semester
+
+                                </p>
+
+                                <p class="quote">
+
+                                    Proverbs 3:5–6
+
+                                    "Trust in the Lord with all your heart
+                                    and lean not on your own understanding;
+                                    in all your ways submit to Him,
+                                    and He will make your paths straight."
+
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        
+
+                        <div class="cards-grid" id="courses-main-grid">
+
+    
+
+    <div
+        class="card"
+        data-category="tourism"
+        data-course="tourism">
+
+        <div class="card-header">
+
+            College of Tourism Management
+
+        </div>
+
+        <div class="card-body">
+
+            <h3>
+
+                BACHELOR OF SCIENCE IN TOURISM MANAGEMENT
+
+            </h3>
+
+        </div>
+
+        <div class="card-footer">
+
+            <button
+                type="button"
+                class="btn-explore"
+                onclick="viewCourseDetails('tourism')">
+
+                Explore
+
+            </button>
+
+        </div>
+
+    </div>
+
+    
+
+    <div
+        class="card"
+        data-category="marketing"
+        data-course="marketing">
+
+        <div class="card-header">
+
+            College of Business and Management
+
+        </div>
+
+        <div class="card-body">
+
+            <h3>
+
+                BACHELOR OF SCIENCE IN
+                MARKETING MANAGEMENT
+
+            </h3>
+
+        </div>
+
+        <div class="card-footer">
+
+            <button
+                type="button"
+                class="btn-explore"
+                onclick="viewCourseDetails('marketing')">
+
+                Explore
+
+            </button>
+
+        </div>
+
+    </div>
+
+    
+
+    <div
+        class="card"
+        data-category="it"
+        data-course="it">
+
+        <div class="card-header">
+
+            College of Education and Technology
+
+        </div>
+
+        <div class="card-body">
+
+            <h3>
+
+                BACHELOR OF SCIENCE IN
+                INFORMATION TECHNOLOGY
+
+            </h3>
+
+        </div>
+
+        <div class="card-footer">
+
+            <button
+                type="button"
+                class="btn-explore"
+                onclick="viewCourseDetails('it')">
+
+                Explore
+
+            </button>
+
+        </div>
+
+    </div>
+
+    
+
+    <div
+        class="card"
+        data-category="beed"
+        data-course="beed">
+
+        <div class="card-header">
+
+            College of Education and Technology
+
+        </div>
+
+        <div class="card-body">
+
+            <h3>
+
+                BACHELOR OF SCIENCE IN
+                ELEMENTARY EDUCATION
+
+            </h3>
+
+        </div>
+
+        <div class="card-footer">
+
+            <button
+                type="button"
+                class="btn-explore"
+                onclick="viewCourseDetails('beed')">
+
+                Explore
+
+            </button>
+
+        </div>
+
+    </div>
+
+    
+
+    <div
+        class="card"
+        data-category="bsed"
+        data-course="bsed">
+
+        <div class="card-header">
+
+            College of Education and Technology
+
+        </div>
+
+        <div class="card-body">
+
+            <h3>
+
+                BACHELOR OF SCIENCE IN
+                SECONDARY EDUCATION
+
+            </h3>
+
+            <p class="card-subtext">
+
+                Major in English and Social Studies
+
+            </p>
+
+        </div>
+
+        <div class="card-footer">
+
+            <button
+                type="button"
+                class="btn-explore"
+                onclick="viewCourseDetails('bsed')">
+
+                Explore
+
+            </button>
+
+        </div>
+
+    </div>
+
+    
+
+    <div
+        class="card"
+        data-category="crim"
+        data-course="crim">
+
+        <div class="card-header">
+
+            College of Criminal Justice Education
+
+        </div>
+
+        <div class="card-body">
+
+            <h3>
+
+                BACHELOR OF SCIENCE IN
+                CRIMINOLOGY
+
+            </h3>
+
+        </div>
+
+        <div class="card-footer">
+
+            <button
+                type="button"
+                class="btn-explore"
+                onclick="viewCourseDetails('crim')">
+
+                Explore
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div
+    id="course-details-panel"
+    class="course-detail-overlay hidden">
+
+    <button
+        type="button"
+        class="btn-back-to-grid"
+        onclick="closeCourseDetails()">
+
+        ← Back to Overview
+
+    </button>
+
+    
+
+    <div
+        id="details-tourism"
+        class="detail-content-node hidden">
+
+        <div class="detail-title-row">
+
+            ✈️ TOURISM MANAGEMENT
+
+        </div>
+
+        <p>
+
+            Learn travel management, airline operations,
+            hospitality services, event planning,
+            and sustainable tourism practices.
+
+        </p>
+
+    </div>
+
+    
+
+    <div
+        id="details-marketing"
+        class="detail-content-node hidden">
+
+        <div class="detail-title-row">
+
+            📈 MARKETING MANAGEMENT
+
+        </div>
+
+        <p>
+
+            Develop skills in digital marketing,
+            consumer behavior,
+            sales management,
+            branding,
+            and entrepreneurship.
+
+        </p>
+
+    </div>
+
+    
+
+    <div
+        id="details-it"
+        class="detail-content-node hidden">
+
+        <div class="detail-title-row">
+
+            💻 INFORMATION TECHNOLOGY
+
+        </div>
+
+        <p>
+
+            Learn programming,
+            networking,
+            cybersecurity,
+            databases,
+            web development,
+            and software engineering.
+
+        </p>
+
+    </div>
+
+    
+
+    <div
+        id="details-beed"
+        class="detail-content-node hidden">
+
+        <div class="detail-title-row">
+
+            🍎 ELEMENTARY EDUCATION
+
+        </div>
+
+        <p>
+
+            Prepare to teach elementary learners
+            through modern teaching strategies,
+            classroom management,
+            and child development.
+
+        </p>
+
+    </div>
+
+    
+
+    <div
+        id="details-bsed"
+        class="detail-content-node hidden">
+
+        <div class="detail-title-row">
+
+            📝 SECONDARY EDUCATION
+
+        </div>
+
+        <p>
+
+            Focus on teaching English and Social Studies
+            with innovative instructional methods
+            for secondary education.
+
+        </p>
+
+    </div>
+
+    
+
+    <div
+        id="details-crim"
+        class="detail-content-node hidden">
+
+        <div class="detail-title-row">
+
+            ⚖️ CRIMINOLOGY
+
+        </div>
+
+        <p>
+
+            Study criminal law,
+            forensic science,
+            investigation,
+            public safety,
+            and law enforcement.
+
+        </p>
+
+    </div>
+
+</div>
+
+</div>
+
+<div id="assessment-tab-view" class="ai-system-wrapper hidden">
+
+    
+
+    <div class="progress-container">
+
+        <div class="progress-bar">
+
+            <div id="assessmentProgressFill"></div>
+
+        </div>
+
+        <div class="progress-text">
+
+            Step
+
+            <span id="currentStep">1</span>
+
+            of 6
+
+        </div>
+
+    </div>
+
+    
+
+    <div id="multi-step-form-container">
+
+        
+
+        <div
+            class="form-step-panel"
+            id="step-panel-1">
+
+            <h3>
+
+                1. Academic Track & Interests
+
+            </h3>
+
+            <div class="input-group">
+
+                <label for="student-strand">
+
+                    Senior High School Strand
+
+                </label>
+
+                <select id="student-strand">
+
+                    <option value="ICT">
+                        ICT
+                    </option>
+
+                    <option value="STEM">
+                        STEM
+                    </option>
+
+                    <option value="ABM">
+                        ABM
+                    </option>
+
+                    <option value="HUMSS">
+                        HUMSS
+                    </option>
+
+                    <option value="GAS">
+                        GAS
+                    </option>
+
+                    <option value="TVL">
+                        TVL
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="input-group">
+
+                <label for="student-interests">
+
+                    Interests
+
+                </label>
+
+                <textarea
+                    id="student-interests"
+                    rows="5"
+                    placeholder="Example: Programming, Cooking, Designing, Teaching, Business..."></textarea>
+
+            </div>
+
+            <div class="step-actions">
+
+                <button
+                    type="button"
+                    class="btn-step-next"
+                    onclick="navigateStep(2)">
+
+                    Next →
+
+                </button>
+
+            </div>
+
+        </div>
+
+        
+
+        <div
+            class="form-step-panel hidden"
+            id="step-panel-2">
+
+            <h3>
+
+                2. Skills & Personal Strengths
+
+            </h3>
+
+            <div class="input-group">
+
+                <label for="student-skills">
+
+                    Describe your strengths
+
+                </label>
+
+                <textarea
+                    id="student-skills"
+                    rows="5"
+                    placeholder="Example: Critical thinking, Communication, Leadership, Creativity..."></textarea>
+
+            </div>
+
+            <div class="step-actions">
+
+                <button
+                    type="button"
+                    class="btn-step-back"
+                    onclick="navigateStep(1)">
+
+                    ← Back
+
+                </button>
+
+                <button
+                    type="button"
+                    class="btn-step-next"
+                    onclick="navigateStep(3)">
+
+                    Next →
+
+                </button>
+
+            </div>
+
+        </div>
+
+        
+
+        <div
+            class="form-step-panel hidden"
+            id="step-panel-3">
+
+            <h3>
+
+                3. Academic Performance
+
+            </h3>
+
+            <div class="grades-grid">
+
+                <div class="input-group">
+
+                    <label for="grade-math">
+
+                        Mathematics
+
+                    </label>
+
+                    <input
+                        id="grade-math"
+                        type="number"
+                        value="85"
+                        min="70"
+                        max="100">
+
+                </div>
+
+                <div class="input-group">
+
+                    <label for="grade-english">
+
+                        English
+
+                    </label>
+
+                    <input
+                        id="grade-english"
+                        type="number"
+                        value="85"
+                        min="70"
+                        max="100">
+
+                </div>
+
+                <div class="input-group">
+
+                    <label for="grade-science">
+
+                        Science
+
+                    </label>
+
+                    <input
+                        id="grade-science"
+                        type="number"
+                        value="85"
+                        min="70"
+                        max="100">
+
+                </div>
+
+            </div>
+
+            <div class="step-actions">
+
+                <button
+                    type="button"
+                    class="btn-step-back"
+                    onclick="navigateStep(2)">
+
+                    ← Back
+
+                </button>
+
+                <button
+                    type="button"
+                    class="btn-step-next"
+                    onclick="navigateStep(4)">
+
+                    Next →
+
+                </button>
+
+            </div>
+
+        </div>
+
+        
+
+        <div
+            class="form-step-panel hidden"
+            id="step-panel-4">
+
+            <h3>
+
+                4. Career Preferences
+
+            </h3>
+
+            <div class="input-group">
+
+                <label for="student-career">
+
+                    Desired Career
+
+                </label>
+
+                <input
+                    id="student-career"
+                    type="text"
+                    placeholder="Example: Software Engineer, Teacher, Police Officer...">
+
+            </div>
+
+            <div class="step-actions">
+
+                <button
+                    type="button"
+                    class="btn-step-back"
+                    onclick="navigateStep(3)">
+
+                    ← Back
+
+                </button>
+
+                <button
+                    type="button"
+                    class="btn-step-next"
+                    onclick="buildAndDisplayQuizPanel()">
+
+                    Start 50-Question Assessment →
+
+                </button>
+
+            </div>
+
+        </div>
+        
+
+<div class="form-step-panel hidden" id="step-panel-5">
+
+    <div class="quiz-card">
+
+        
+
+        <div class="quiz-header">
+
+            <div>
+
+                <h2>Career Assessment Quiz</h2>
+
+                <p>
+                    Answer all <strong>50 questions</strong> honestly.
+                    There are no right or wrong answers.
+                </p>
+
+            </div>
+
+            <div class="quiz-progress">
+
+                <span id="quizCounter">
+
+                    Question 1 of 50
+
+                </span>
+
+                <div class="progress-bar">
+
+                    <div id="quizProgressFill"></div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        
+
+        <div
+            id="quizNotification"
+            class="quiz-notification hidden">
+
+        </div>
+
+        
+
+        <div id="quizQuestionContainer">
+
+            
+
+        </div>
+
+        
+
+        <div class="quiz-navigation">
+
+            <button
+                type="button"
+                class="btn-step-back"
+                id="prevQuestionBtn">
+
+                ← Previous
+
+            </button>
+
+            <button
+                type="button"
+                class="btn-step-next"
+                id="nextQuestionBtn">
+
+                Next →
+
+            </button>
+
+        </div>
+
+        
+
+        <div
+            id="finishQuizArea"
+            class="hidden">
+
+            <button
+                type="button"
+                id="finishAssessmentBtn"
+                class="btn-ai-generate"
+                onclick="submitFullAssessmentToAI()">
+
+                🎓 Finish Assessment
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="form-step-panel hidden" id="step-panel-6">
+
+    <div class="ai-output-card">
+
+        <div class="ai-match-score-badge">
+
+            <span id="ai-res-badge">
+
+                0%
+
+            </span>
+
+        </div>
+
+        <h2 id="ai-res-title">
+
+            Processing your assessment...
+
+        </h2>
+
+        <div class="ai-divider"></div>
+
+        <p id="ai-res-reasoning">
+
+        </p>
+
+        <div class="ai-next-steps">
+
+            <h5>
+
+                Suggested Career Pathways
+
+            </h5>
+
+            <ul id="ai-res-pathways">
+
+            </ul>
+
+        </div>
+
+        <button
+            type="button"
+            class="btn-step-back btn-retake"
+            onclick="resetAssessmentFlow()">
+
+            🔄 Retake Assessment
+
+        </button>
+
+    </div>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- ============================================================ -->
+<!-- LEADERBOARD TAB VIEW                                          -->
+<!-- ============================================================ -->
+<div id="leaderboard-tab-view" class="hidden">
+
+    <div class="container leaderboard-container">
+
+        <div class="leaderboard-header-row">
+
+            <h2 class="leaderboard-title">🏆 Quiz Leaderboard</h2>
+
+            <p class="leaderboard-subtitle">
+                Ranked by each student's best quiz result. Ties are broken by shortest completion time.
+            </p>
+
+            <p id="leaderboardUpdatedAt" class="leaderboard-updated-at">
+                Last updated: --
+            </p>
+
+        </div>
+
+        <!-- Highlight card for the current student's best rank -->
+        <div id="myRankCard" class="my-rank-card hidden">
+            <div class="my-rank-avatar-wrap">
+                <img id="myRankAvatar" class="my-rank-avatar hidden" alt="My profile picture">
+                <span id="myRankAvatarFallback" class="my-rank-avatar-fallback">--</span>
+            </div>
+            <span id="myRankBadge" class="my-rank-badge">#1</span>
+            <div class="my-rank-info">
+                <strong id="myRankName"></strong>
+                <span id="myRankDetail"></span>
+            </div>
+        </div>
+
+        <div class="leaderboard-table-wrapper">
+
+            <table class="leaderboard-table" id="leaderboardTable">
+
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Student Name</th>
+                        <th>Recommended Course</th>
+                        <th>Total Score</th>
+                        <th>Time Taken</th>
+                    </tr>
+                </thead>
+
+                <tbody id="leaderboardBody">
+                    <tr>
+                        <td colspan="5" class="lb-loading">Loading leaderboard…</td>
+                    </tr>
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div id="logoutModal" class="modal-overlay hidden">
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+
+            ⚠️ Logout Confirmation
+
+        </div>
+
+        <div class="modal-body">
+
+            <h3>
+
+                Are you sure you want to log out?
+
+            </h3>
+
+            <p class="modal-description">
+
+                Any unsaved changes will be lost.
+
+            </p>
+
+        </div>
+
+        <div class="modal-footer">
+
+            <button
+                type="button"
+                id="cancelLogoutBtn"
+                class="btn-modal btn-modal-cancel">
+
+                Cancel
+
+            </button>
+
+            <button
+                type="button"
+                id="confirmLogoutBtn"
+                class="btn-modal btn-modal-confirm">
+
+                Log Out
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div id="passwordModal" class="modal-overlay hidden">
+
+    <div class="modal-box forgot-pwd-dark-box">
+
+        <div id="pwd-step-1" class="pwd-step-panel">
+
+            <div class="modal-header-dark">
+
+                Change Password
+
+            </div>
+
+            <div class="modal-body dark-modal-body">
+
+                <div class="input-group dark-input-group">
+
+                    <label for="pwd-username">
+
+                        Student ID
+
+                    </label>
+
+                    <input
+                        type="text"
+                        id="pwd-username"
+                        class="dark-input-field"
+                        placeholder="Enter Student ID">
+
+                </div>
+
+                <div class="input-group dark-input-group">
+
+                    <label for="pwd-method">
+
+                        Verification Method
+
+                    </label>
+
+                    <select
+                        id="pwd-method"
+                        class="dark-input-field"
+                        onchange="toggleMethodInput()">
+
+                        <option value="email">
+
+                            📧 Email Address
+
+                        </option>
+
+                        <option value="phone">
+
+                            📱 Mobile Number
+
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="input-group dark-input-group">
+
+                    <label
+                        id="method-label"
+                        for="pwd-contact-input">
+
+                        Enter Email Address
+
+                    </label>
+
+                    <input
+                        type="text"
+                        id="pwd-contact-input"
+                        class="dark-input-field"
+                        placeholder="student@email.com">
+
+                </div>
+
+                <div class="input-group dark-input-group">
+
+                    <button
+                        type="button"
+                        id="sendCodeBtn"
+                        class="btn-dark-submit">
+
+                        Send Verification Code
+
+                    </button>
+
+                </div>
+
+                <div class="input-group dark-input-group">
+
+                    <label for="otpCode">
+
+                        Verification Code
+
+                    </label>
+
+                    <input
+                        type="text"
+                        id="otpCode"
+                        class="dark-input-field"
+                        placeholder="6-digit OTP">
+
+                </div>
+
+                <p id="otpTimer" class="otp-timer"></p>
+
+                <div class="input-group dark-input-group">
+
+                    <label for="pwd-new">
+
+                        New Password
+
+                    </label>
+
+                    <input
+                        type="password"
+                        id="pwd-new"
+                        class="dark-input-field">
+
+                </div>
+
+                <div class="input-group dark-input-group">
+
+                    <label for="pwd-confirm">
+
+                        Confirm Password
+
+                    </label>
+
+                    <input
+                        type="password"
+                        id="pwd-confirm"
+                        class="dark-input-field">
+
+                </div>
+
+            </div>
+
+            <div class="modal-footer-dark">
+
+                <button
+                    type="button"
+                    id="cancelPwdBtn"
+                    class="btn-dark-cancel">
+
+                    Cancel
+
+                </button>
+
+                <button
+                    type="button"
+                    id="savePwdBtn"
+                    class="btn-dark-submit">
+
+                    Save Password
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div id="settingsModal" class="modal-overlay hidden">
+
+    <div class="modal-box settings-modal-box">
+
+        <div class="modal-header">
+
+            ⚙️ Portal Settings
+
+        </div>
+
+        <div class="modal-body settings-body">
+
+            <div class="setting-column profile-picture-setting">
+
+                <label>
+
+                    🖼️ Profile Picture
+
+                </label>
+
+                <div class="profile-picture-preview-wrap">
+
+                    <div class="profile-picture-preview">
+
+                        <img id="settingsProfilePreview" class="profile-picture-image hidden" alt="Current profile picture">
+
+                        <span id="settingsProfileFallback" class="profile-picture-fallback">--</span>
+
+                    </div>
+
+                    <input
+                        type="file"
+                        id="settingsProfileInput"
+                        class="hidden"
+                        accept="image/png,image/jpeg,image/jpg,image/gif,image/webp">
+
+                    <button
+                        type="button"
+                        id="chooseProfileBtn"
+                        class="btn-settings-link">
+
+                        Upload / Change Picture
+
+                    </button>
+
+                    <p class="profile-picture-hint">
+                        PNG, JPG, JPEG, GIF, or WEBP up to 5 MB.
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="setting-row">
+
+                <label for="settings-darkmode">
+
+                    🌙 Dark Mode
+
+                </label>
+
+                <input
+                    type="checkbox"
+                    id="settings-darkmode">
+
+            </div>
+
+            <div class="setting-column">
+
+                <label for="settings-lang">
+
+                    🌐 Language
+
+                </label>
+
+                <select id="settings-lang">
+
+                    <option value="en">
+
+                        English
+
+                    </option>
+
+                    <option value="tl">
+
+                        Filipino
+
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="setting-row">
+
+                <label for="settings-notify">
+
+                    📧 Email Notifications
+
+                </label>
+
+                <input
+                    type="checkbox"
+                    id="settings-notify"
+                    checked>
+
+            </div>
+
+            <div class="setting-row">
+
+                <label>
+
+                    🔑 Password
+
+                </label>
+
+                <button
+                    type="button"
+                    id="openChangePwdBtn"
+                    class="btn-settings-link">
+
+                    Change Password
+
+                </button>
+
+            </div>
+
+        </div>
+
+        <div class="quiz-history-section">
+
+            <div class="quiz-history-header">
+
+                <h3>Quiz History</h3>
+
+                <p>Review every saved recommendation attempt.</p>
+
+            </div>
+
+            <div id="quizHistoryList" class="quiz-history-list">
+                <div class="quiz-history-empty">
+                    No quiz history yet.
+                </div>
+            </div>
+
+        </div>
+
+        <div class="modal-footer">
+
+            <button
+                type="button"
+                id="cancelSettingsBtn"
+                class="btn-modal btn-modal-cancel">
+
+                Cancel
+
+            </button>
+
+            <button
+                type="button"
+                id="saveSettingsBtn"
+                class="btn-modal btn-modal-confirm">
+
+                Save Changes
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+</div>
+
+<script src="Homepage.js"></script>
+
+</body>
+</html>

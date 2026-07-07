@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="course.css">
+    <title>College Of St. Catherine Course Recommendation</title>
+</head>
+<body>
+
+<div class="wrapper">
+
+    <nav class="nav">
+        <div class="nav-menu">
+        </div>
+        
+        <div class="nav-button">
+            <button class="btn white-btn" id="loginBtn" onclick="login()">Sign In</button>
+            <button class="btn" id="registerBtn" onclick="register()">Sign Up</button>
+        </div>
+
+        <div class="nav-menu-btn">
+            <i class="bx bx-menu"></i>
+        </div>
+    </nav>
+
+    <div class="form-box">
+
+        <!-- LOGIN FORM -->
+        <div class="login-container" id="login">
+
+            <div class="top">
+                <span>Don't have an account?
+                    <a href="#" onclick="register()">Sign Up</a>
+                </span>
+                <header>Login</header>
+            </div>
+
+            <div class="input-box">
+                <input type="email" id="login-email" class="input-field" placeholder="Email" required>
+                <i class="bx bx-envelope"></i>
+            </div>
+
+            <div class="input-box">
+                <input type="password" id="login-password" class="input-field" placeholder="Password" required>
+                <i class="bx bx-lock-alt"></i>
+            </div>
+
+            <!-- Error message shown on failed login -->
+            <p id="login-error" style="color:red; font-size:13px; margin: -8px 0 8px 0; display:none;"></p>
+
+            <div class="input-box">
+                <input type="button" class="submit" value="Sign In" onclick="loginUser()">
+            </div>
+
+            <div class="two-col">
+                <div class="one">
+                    <input type="checkbox" id="login-check">
+                    <label for="login-check"> Remember me</label>
+                </div>
+                <div class="two">
+                    <label><a href="#" id="forgotPwdLink">Forgot Password?</a></label>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- REGISTER FORM -->
+        <div class="register-container" id="register">
+
+            <div class="top">
+                <span>Have an account?
+                    <a href="#" onclick="login()">Login</a>
+                </span>
+                <header>Sign Up</header>
+            </div>
+
+            <div class="two-forms">
+                <div class="input-box">
+                    <input type="text" id="reg-firstname" class="input-field" placeholder="Firstname" required>
+                    <i class="bx bx-user"></i>
+                </div>
+                <div class="input-box">
+                    <input type="text" id="reg-lastname" class="input-field" placeholder="Lastname" required>
+                    <i class="bx bx-user"></i>
+                </div>
+            </div>
+
+            <div class="input-box">
+                <input type="email" id="reg-email" class="input-field" placeholder="Email" required>
+                <i class="bx bx-envelope"></i>
+            </div>
+
+            <div class="input-box">
+                <input type="password" id="reg-password" class="input-field" placeholder="Password" required>
+                <i class="bx bx-lock-alt"></i>
+            </div>
+
+            <div class="input-box select-box">
+                <select name="strand" id="reg-strand" class="input-field" required>
+                    <option value="" disabled selected>Select Strand</option>
+                    <option value="STEM">STEM</option>
+                    <option value="ABM">ABM</option>
+                    <option value="HUMSS">HUMSS</option>
+                    <option value="GAS">GAS</option>
+                    <option value="TVL-ICT">TVL-ICT</option>
+                    <option value="TVL-HE">TVL-HE</option>
+                </select>
+                <i class="bx bx-book-bookmark"></i>
+            </div>
+
+            <p id="reg-error" style="color:red; font-size:13px; margin: -8px 0 8px 0; display:none;"></p>
+
+            <div class="input-box">
+                <input type="button" class="submit" value="Register" onclick="registerUser()">
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- FORGOT PASSWORD MODAL -->
+    <div class="modal-overlay hidden" id="forgotPwdModal">
+        <div class="modal-box">
+
+            <div class="modal-head">
+                <span>Reset Password</span>
+                <i class="bx bx-x" id="closeForgotPwd"></i>
+            </div>
+
+            <p class="modal-sub">Enter the email on your account and choose a new password.</p>
+
+            <div class="input-box">
+                <input type="email" id="forgot-email" class="input-field" placeholder="Email" required>
+                <i class="bx bx-envelope"></i>
+            </div>
+
+            <div class="input-box">
+                <input type="password" id="forgot-new-password" class="input-field" placeholder="New Password" required>
+                <i class="bx bx-lock-alt"></i>
+            </div>
+
+            <div class="input-box">
+                <input type="password" id="forgot-confirm-password" class="input-field" placeholder="Confirm New Password" required>
+                <i class="bx bx-lock-alt"></i>
+            </div>
+
+            <p id="forgot-error" style="color:red; font-size:13px; margin: -8px 0 8px 0; display:none;"></p>
+            <p id="forgot-success" style="color:#1b8a1b; font-size:13px; margin: -8px 0 8px 0; display:none;"></p>
+
+            <div class="input-box">
+                <input type="button" class="submit" value="Reset Password" onclick="resetPassword()">
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+    var loginBtn      = document.getElementById("loginBtn");
+    var registerBtn   = document.getElementById("registerBtn");
+    var loginForm     = document.getElementById("login");
+    var registerForm  = document.getElementById("register");
+
+    const API_BASE = (() => {
+        const { protocol, hostname, port } = window.location;
+        const isLocalFile = protocol === "file:";
+        const isLocalHost = ["localhost", "127.0.0.1", ""].includes(hostname);
+
+        if (isLocalFile || (isLocalHost && port && port !== "5000")) {
+            return "http://127.0.0.1:5000";
+        }
+
+        return "";
+    })();
+    
+    function login() {
+        loginForm.style.left    = "4px";
+        registerForm.style.right = "-520px";
+        loginBtn.classList.add("white-btn");
+        registerBtn.classList.remove("white-btn");
+    }
+
+    function register() {
+        loginForm.style.left    = "-510px";
+        registerForm.style.right = "5px";
+        registerBtn.classList.add("white-btn");
+        loginBtn.classList.remove("white-btn");
+    }
+
+    // ── REMEMBER ME — restore saved email on page load ─────────────
+    (function restoreRememberedUser() {
+        const remembered = localStorage.getItem("acadsync-remember-email");
+        if (remembered) {
+            document.getElementById("login-email").value = remembered;
+            document.getElementById("login-check").checked = true;
+        }
+    })();
+
+    // ── FORGOT PASSWORD — modal open/close ─────────────────────────
+    const forgotPwdModal = document.getElementById("forgotPwdModal");
+
+    document.getElementById("forgotPwdLink").addEventListener("click", (e) => {
+        e.preventDefault();
+        document.getElementById("forgot-error").style.display = "none";
+        document.getElementById("forgot-success").style.display = "none";
+        forgotPwdModal.classList.remove("hidden");
+    });
+
+    document.getElementById("closeForgotPwd").addEventListener("click", () => {
+        forgotPwdModal.classList.add("hidden");
+    });
+
+    forgotPwdModal.addEventListener("click", (e) => {
+        if (e.target === forgotPwdModal) forgotPwdModal.classList.add("hidden");
+    });
+
+    async function resetPassword() {
+        const email    = document.getElementById("forgot-email").value.trim();
+        const newPwd   = document.getElementById("forgot-new-password").value.trim();
+        const confirm  = document.getElementById("forgot-confirm-password").value.trim();
+        const errEl    = document.getElementById("forgot-error");
+        const okEl     = document.getElementById("forgot-success");
+
+        errEl.style.display = "none";
+        okEl.style.display  = "none";
+
+        if (!email || !newPwd || !confirm) {
+            errEl.textContent   = "Please fill in all fields.";
+            errEl.style.display = "block";
+            return;
+        }
+
+        if (newPwd !== confirm) {
+            errEl.textContent   = "Passwords do not match.";
+            errEl.style.display = "block";
+            return;
+        }
+
+        try {
+            const res  = await fetch(`${API_BASE}/api/reset-password`, {
+                method:  "POST",
+                headers: { "Content-Type": "application/json" },
+                body:    JSON.stringify({ email, new_password: newPwd })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                okEl.textContent   = "Password updated! You can now sign in.";
+                okEl.style.display = "block";
+                setTimeout(() => {
+                    forgotPwdModal.classList.add("hidden");
+                }, 1500);
+            } else {
+                errEl.textContent   = data.message || "Could not reset password.";
+                errEl.style.display = "block";
+            }
+        } catch (err) {
+            errEl.textContent   = "Cannot connect to server. Make sure course.py is running.";
+            errEl.style.display = "block";
+        }
+    }
+
+    // ── LOGIN — calls Flask /api/login ────────────────────────────
+    async function loginUser() {
+        const email    = document.getElementById("login-email").value.trim();
+        const password = document.getElementById("login-password").value.trim();
+        const remember = document.getElementById("login-check").checked;
+        const errEl    = document.getElementById("login-error");
+
+        errEl.style.display = "none";
+
+        if (!email || !password) {
+            errEl.textContent   = "Please enter your email and password.";
+            errEl.style.display = "block";
+            return;
+        }
+
+        try {
+            const res  = await fetch(`${API_BASE}/api/login`, {
+                method:  "POST",
+                headers: { "Content-Type": "application/json" },
+                body:    JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                // Remember Me
+                if (remember) {
+                    localStorage.setItem("acadsync-remember-email", email);
+                } else {
+                    localStorage.removeItem("acadsync-remember-email");
+                }
+
+                // Persist every field the dashboard needs — no hardcoding on the other side
+                sessionStorage.setItem("studentID",     data.studentID);
+                sessionStorage.setItem("studentName",   data.name);
+                sessionStorage.setItem("studentFirstName", data.firstName);
+                sessionStorage.setItem("studentLastName",  data.lastName);
+                sessionStorage.setItem("studentEmail",  data.email);
+                sessionStorage.setItem("studentStrand", data.strand || "");
+                sessionStorage.setItem("studentSection",data.section || "");
+                sessionStorage.setItem("studentProfilePicture", data.profilePictureUrl || "");
+
+                window.location.href = "Homepage.html";
+            } else {
+                errEl.textContent   = data.message || "Invalid email or password.";
+                errEl.style.display = "block";
+            }
+
+        } catch (err) {
+            errEl.textContent   = "Cannot connect to server. Make sure course.py is running.";
+            errEl.style.display = "block";
+        }
+    }
+
+    // ── REGISTER — calls Flask /api/register ───────────────────────
+    async function registerUser() {
+        const firstname = document.getElementById("reg-firstname").value.trim();
+        const lastname  = document.getElementById("reg-lastname").value.trim();
+        const email     = document.getElementById("reg-email").value.trim();
+        const password  = document.getElementById("reg-password").value.trim();
+        const strand    = document.getElementById("reg-strand").value;
+        const errEl     = document.getElementById("reg-error");
+
+        errEl.style.display = "none";
+
+        if (!firstname || !lastname || !email || !password || !strand) {
+            errEl.textContent   = "Please fill in all fields.";
+            errEl.style.display = "block";
+            return;
+        }
+
+        try {
+            const res  = await fetch(`${API_BASE}/api/register`, {
+                method:  "POST",
+                headers: { "Content-Type": "application/json" },
+                body:    JSON.stringify({ firstname, lastname, email, password, strand })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                alert("Account created! You can now sign in.");
+                login();
+                document.getElementById("login-email").value = email;
+            } else {
+                errEl.textContent   = data.message || "Registration failed.";
+                errEl.style.display = "block";
+            }
+
+        } catch (err) {
+            errEl.textContent   = "Cannot connect to server. Make sure course.py is running.";
+            errEl.style.display = "block";
+        }
+    }
+
+    // Allow pressing Enter on password field to submit
+    document.getElementById("login-password")
+        .addEventListener("keydown", function(e) {
+            if (e.key === "Enter") loginUser();
+        });
+</script>
+
+</body>
+</html>
