@@ -350,6 +350,10 @@ function navigateStep(step) {
 
   if (step < 1 || step > totalSteps) return;
 
+  if (app.currentStep === 3 && step > 3 && !validateAcademicGrades()) {
+    return;
+  }
+
   app.currentStep = step;
 
   document
@@ -388,6 +392,40 @@ function resetAssessmentFlow() {
 
 // Quiz timer — tracks seconds from when the quiz panel opens to submission
 let _quizStartTime = null;
+
+function normalizeGradeValue(value) {
+  const cleaned = String(value || "").replace(/\D/g, "").slice(0, 2);
+  if (cleaned === "") return null;
+  const grade = Number(cleaned);
+  return Number.isInteger(grade) && grade >= 0 && grade <= 99 ? grade : null;
+}
+
+function validateAcademicGrades() {
+  const fields = [
+    { id: "grade-math", label: "Mathematics" },
+    { id: "grade-english", label: "English" },
+    { id: "grade-science", label: "Science" },
+  ];
+
+  for (const field of fields) {
+    const input = document.getElementById(field.id);
+    const grade = normalizeGradeValue(input?.value);
+    if (grade === null) {
+      showNotification(`${field.label} grade must be a whole number from 0 to 99.`, "warning");
+      input?.focus();
+      return false;
+    }
+    input.value = String(grade);
+  }
+
+  return true;
+}
+
+["grade-math", "grade-english", "grade-science"].forEach((id) => {
+  document.getElementById(id)?.addEventListener("input", function () {
+    this.value = String(this.value || "").replace(/\D/g, "").slice(0, 2);
+  });
+});
 
 function buildAndDisplayQuizPanel() {
   navigateStep(5);
@@ -450,6 +488,11 @@ async function submitFullAssessmentToAI() {
     return;
   }
 
+  if (!validateAcademicGrades()) {
+    navigateStep(3);
+    return;
+  }
+
   navigateStep(6);
 
   const badge = document.getElementById("ai-res-badge");
@@ -467,9 +510,9 @@ async function submitFullAssessmentToAI() {
   const skills = document.getElementById("student-skills")?.value || "";
   const career = document.getElementById("student-career")?.value || "";
   const grades = {
-    math: document.getElementById("grade-math")?.value || 85,
-    english: document.getElementById("grade-english")?.value || 85,
-    science: document.getElementById("grade-science")?.value || 85,
+    math: normalizeGradeValue(document.getElementById("grade-math")?.value),
+    english: normalizeGradeValue(document.getElementById("grade-english")?.value),
+    science: normalizeGradeValue(document.getElementById("grade-science")?.value),
   };
 
   const quizScores = buildQuizScores();
@@ -852,12 +895,14 @@ document.querySelectorAll("[data-password-target]").forEach((button) => {
   });
 });
 
-document.getElementById("savePwdBtn")?.addEventListener("click", () => {
+document.getElementById("savePwdBtn")?.addEventListener("click", async () => {
+  const currentPwd = document.getElementById("pwd-current")?.value || "";
   const newPwd = document.getElementById("pwd-new")?.value || "";
   const confirmPwd = document.getElementById("pwd-confirm")?.value || "";
+  const studentId = sessionStorage.getItem("studentID") || "";
 
-  if (!newPwd || !confirmPwd) {
-    showNotification("Please fill in both password fields.", "warning");
+  if (!currentPwd || !newPwd || !confirmPwd) {
+    showNotification("Please fill in current password, new password, and confirm password.", "warning");
     return;
   }
 
@@ -875,8 +920,32 @@ document.getElementById("savePwdBtn")?.addEventListener("click", () => {
     return;
   }
 
-  closeModal("passwordModal");
-  showNotification("Password changed successfully.", "success");
+  try {
+    const response = await fetch(`${API_BASE}/api/change-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        student_id: studentId,
+        current_password: currentPwd,
+        new_password: newPwd,
+      }),
+    });
+    const data = await response.json();
+
+    if (!data.success) {
+      showNotification(data.message || "Could not change password.", "warning");
+      return;
+    }
+
+    ["pwd-current", "pwd-new", "pwd-confirm"].forEach((id) => {
+      const input = document.getElementById(id);
+      if (input) input.value = "";
+    });
+    closeModal("passwordModal");
+    showNotification(data.message || "Password changed successfully.", "success");
+  } catch (err) {
+    showNotification("Cannot connect to server. Please try again.", "warning");
+  }
 });
 
 function syncHeaderProfilePicture() {

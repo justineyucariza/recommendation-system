@@ -282,7 +282,6 @@
 
     // ── FORGOT PASSWORD — modal open/close ─────────────────────────
     const forgotPwdModal = document.getElementById("forgotPwdModal");
-    let forgotVerificationCode = "";
 
     document.getElementById("forgotPwdLink").addEventListener("click", (e) => {
         e.preventDefault();
@@ -300,7 +299,7 @@
         if (e.target === forgotPwdModal) forgotPwdModal.classList.add("hidden");
     });
 
-    function sendForgotCode() {
+    async function sendForgotCode() {
         const email = document.getElementById("forgot-email").value.trim();
         const errEl = document.getElementById("forgot-error");
         const hintEl = document.getElementById("forgot-code-hint");
@@ -318,12 +317,22 @@
             return;
         }
 
-        forgotVerificationCode = String(Math.floor(100000 + Math.random() * 900000));
-        showFormMessage(
-            hintEl,
-            `Verification code sent. Demo code: ${forgotVerificationCode}`,
-            "warning"
-        );
+        try {
+            const res = await fetch(`${API_BASE}/api/forgot-password/send-code`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                showFormMessage(hintEl, data.message || "Verification code sent. Please check your email.", "success");
+            } else {
+                showFormMessage(errEl, data.message || "Could not send verification code.");
+            }
+        } catch (err) {
+            showFormMessage(errEl, "Cannot connect to server. Make sure course.py is running.");
+        }
     }
 
     async function resetPassword() {
@@ -347,16 +356,6 @@
             return;
         }
 
-        if (!forgotVerificationCode) {
-            showFormMessage(errEl, "Please send a verification code first.");
-            return;
-        }
-
-        if (code !== forgotVerificationCode) {
-            showFormMessage(errEl, "The verification code is incorrect.");
-            return;
-        }
-
         const passwordIssues = getPasswordIssues(newPwd);
         if (passwordIssues.length) {
             showFormMessage(errEl, `Password must include ${passwordIssues.join(", ")}.`);
@@ -372,13 +371,12 @@
             const res  = await fetch(`${API_BASE}/api/reset-password`, {
                 method:  "POST",
                 headers: { "Content-Type": "application/json" },
-                body:    JSON.stringify({ email, new_password: newPwd })
+                body:    JSON.stringify({ email, code, new_password: newPwd })
             });
             const data = await res.json();
 
             if (data.success) {
                 showFormMessage(okEl, "Password updated! You can now sign in.", "success");
-                forgotVerificationCode = "";
                 setTimeout(() => {
                     forgotPwdModal.classList.add("hidden");
                 }, 1500);
@@ -482,7 +480,9 @@
             const data = await res.json();
 
             if (data.success) {
-                alert("Account created! You can now sign in.");
+                alert(data.emailNotice
+                    ? `Account created! You can now sign in.\n\n${data.emailNotice}`
+                    : "Account created! You can now sign in.");
                 login();
                 document.getElementById("login-email").value = email;
             } else {

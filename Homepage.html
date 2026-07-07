@@ -877,10 +877,11 @@
 
                     <input
                         id="grade-math"
-                        type="number"
+                        type="text"
+                        inputmode="numeric"
+                        maxlength="2"
                         value="85"
-                        min="70"
-                        max="100">
+                        pattern="[0-9]{1,2}">
 
                 </div>
 
@@ -894,10 +895,11 @@
 
                     <input
                         id="grade-english"
-                        type="number"
+                        type="text"
+                        inputmode="numeric"
+                        maxlength="2"
                         value="85"
-                        min="70"
-                        max="100">
+                        pattern="[0-9]{1,2}">
 
                 </div>
 
@@ -911,10 +913,11 @@
 
                     <input
                         id="grade-science"
-                        type="number"
+                        type="text"
+                        inputmode="numeric"
+                        maxlength="2"
                         value="85"
-                        min="70"
-                        max="100">
+                        pattern="[0-9]{1,2}">
 
                 </div>
 
@@ -1298,6 +1301,30 @@
 
                 <div class="input-group dark-input-group">
 
+                    <label for="pwd-current">
+
+                        Current Password
+
+                    </label>
+
+                    <div class="password-input-wrap">
+                        <input
+                            type="password"
+                            id="pwd-current"
+                            class="dark-input-field">
+                        <button
+                            type="button"
+                            class="dashboard-password-toggle"
+                            aria-label="Show current password"
+                            data-password-target="pwd-current">
+                            <i class="bx bx-show" aria-hidden="true"></i>
+                        </button>
+                    </div>
+
+                </div>
+
+                <div class="input-group dark-input-group hidden">
+
                     <label for="pwd-username">
 
                         Student ID
@@ -1312,7 +1339,7 @@
 
                 </div>
 
-                <div class="input-group dark-input-group">
+                <div class="input-group dark-input-group hidden">
 
                     <label for="pwd-method">
 
@@ -1341,7 +1368,7 @@
 
                 </div>
 
-                <div class="input-group dark-input-group">
+                <div class="input-group dark-input-group hidden">
 
                     <label
                         id="method-label"
@@ -1359,7 +1386,7 @@
 
                 </div>
 
-                <div class="input-group dark-input-group">
+                <div class="input-group dark-input-group hidden">
 
                     <button
                         type="button"
@@ -1372,7 +1399,7 @@
 
                 </div>
 
-                <div class="input-group dark-input-group">
+                <div class="input-group dark-input-group hidden">
 
                     <label for="otpCode">
 
@@ -1388,7 +1415,7 @@
 
                 </div>
 
-                <p id="otpTimer" class="otp-timer"></p>
+                <p id="otpTimer" class="otp-timer hidden"></p>
 
                 <div class="input-group dark-input-group">
 

@@ -1,10 +1,16 @@
 import os
 import re
-from datetime import datetime
+import ssl
+import smtplib
+import secrets
+import hashlib
+from datetime import datetime, timedelta
+from email.message import EmailMessage
 from flask import Flask, request, jsonify, send_from_directory, abort
 from flask_cors import CORS
 import mysql.connector
 from mysql.connector import Error
+from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -35,6 +41,18 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads", "profile-pictures")
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 EMAIL_PATTERN = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
+RESET_CODE_MINUTES = int(os.environ.get("RESET_CODE_MINUTES", "10"))
+# SMTP credentials must be provided as environment variables in Railway/local env.
+# Required: SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD.
+# Optional: SMTP_FROM_EMAIL, SMTP_USE_TLS, RESET_CODE_MINUTES.
+SMTP_CONFIG = {
+    "host": os.environ.get("SMTP_HOST", ""),
+    "port": int(os.environ.get("SMTP_PORT", "587")),
+    "username": os.environ.get("SMTP_USERNAME", ""),
+    "password": os.environ.get("SMTP_PASSWORD", ""),
+    "from_email": os.environ.get("SMTP_FROM_EMAIL") or os.environ.get("SMTP_USERNAME", ""),
+    "use_tls": os.environ.get("SMTP_USE_TLS", "1") != "0",
+}
 FRONTEND_FILES = {
     "index.html",
     "Homepage.html",
@@ -115,6 +133,91 @@ def password_validation_errors(password):
 
 def password_requirements_message(errors):
     return "Password must include " + ", ".join(errors) + "."
+
+
+def hash_password(password):
+    return generate_password_hash(password)
+
+
+def verify_password(stored_password, submitted_password):
+    if not stored_password:
+        return False
+    if stored_password.startswith(("pbkdf2:", "scrypt:")):
+        return check_password_hash(stored_password, submitted_password)
+    return secrets.compare_digest(stored_password, submitted_password)
+
+
+def code_hash(code):
+    return hashlib.sha256(code.encode("utf-8")).hexdigest()
+
+
+def is_email_configured():
+    return all([
+        SMTP_CONFIG["host"],
+        SMTP_CONFIG["username"],
+        SMTP_CONFIG["password"],
+        SMTP_CONFIG["from_email"],
+    ])
+
+
+def send_email(to_email, subject, body):
+    if not is_email_configured():
+        raise RuntimeError("Email service is not configured.")
+
+    message = EmailMessage()
+    message["From"] = SMTP_CONFIG["from_email"]
+    message["To"] = to_email
+    message["Subject"] = subject
+    message.set_content(body)
+
+    if SMTP_CONFIG["use_tls"]:
+        context = ssl.create_default_context()
+        with smtplib.SMTP(SMTP_CONFIG["host"], SMTP_CONFIG["port"], timeout=20) as server:
+            server.starttls(context=context)
+            server.login(SMTP_CONFIG["username"], SMTP_CONFIG["password"])
+            server.send_message(message)
+    else:
+        with smtplib.SMTP_SSL(SMTP_CONFIG["host"], SMTP_CONFIG["port"], timeout=20) as server:
+            server.login(SMTP_CONFIG["username"], SMTP_CONFIG["password"])
+            server.send_message(message)
+
+
+def send_reset_code_email(to_email, code):
+    send_email(
+        to_email,
+        "AcadSync Password Reset Code",
+        (
+            "Hello,\n\n"
+            f"Your AcadSync password reset code is: {code}\n\n"
+            f"This code expires in {RESET_CODE_MINUTES} minutes. "
+            "If you did not request this reset, you can ignore this email.\n\n"
+            "AcadSync"
+        )
+    )
+
+
+def send_registration_email(to_email, name):
+    send_email(
+        to_email,
+        "AcadSync Account Created",
+        (
+            f"Hello {name or 'student'},\n\n"
+            "Your AcadSync account has been created successfully. "
+            "You can now sign in and use the course recommendation system.\n\n"
+            "For your security, this email does not include your password.\n\n"
+            "AcadSync"
+        )
+    )
+
+
+def parse_valid_grade(value):
+    try:
+        grade = int(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+    if 0 <= grade <= 99:
+        return grade
+    return None
 
 
 # ------------------------------------------------------------------
@@ -201,6 +304,19 @@ def run_startup_migrations():
                 alternative_course VARCHAR(100),
                 alignment_score    VARCHAR(10),
                 created_at         TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS password_reset_codes (
+                id         INT AUTO_INCREMENT PRIMARY KEY,
+                email      VARCHAR(150) NOT NULL,
+                code_hash  VARCHAR(64) NOT NULL,
+                expires_at DATETIME NOT NULL,
+                used_at    DATETIME DEFAULT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_password_reset_email (email),
+                INDEX idx_password_reset_expiry (expires_at)
             )
         """)
 
@@ -308,18 +424,19 @@ def login():
                    u.first_name,
                    u.last_name,
                    u.email,
+                   u.password,
                    u.section,
                    u.profile_picture,
                    s.strand_name
             FROM   users u
                  LEFT JOIN strands s ON u.strand_id = s.strand_id
-            WHERE  u.email = %s AND u.password = %s
-        """, (email, password))
+            WHERE  u.email = %s
+        """, (email,))
         user = cursor.fetchone()
     finally:
         conn.close()
 
-    if not user:
+    if not user or not verify_password(user["password"], password):
         return jsonify({"success": False, "message": "Invalid email or password."}), 401
 
     return jsonify({
@@ -386,10 +503,17 @@ def register():
         cursor.execute("""
             INSERT INTO users (first_name, last_name, email, password, strand_id, section, profile_picture)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (firstname, lastname, email, password, strand_id, section or None, None))
+        """, (firstname, lastname, email, hash_password(password), strand_id, section or None, None))
         conn.commit()
 
         new_id = cursor.lastrowid
+        email_notice = ""
+        try:
+            send_registration_email(email, format_full_name(firstname, lastname))
+        except Exception as mail_error:
+            email_notice = "Account created, but the confirmation email could not be sent."
+            print(f"[EMAIL REGISTER ERROR] {mail_error}")
+
         return jsonify({
             "success":   True,
             "studentID": new_id,
@@ -399,7 +523,8 @@ def register():
             "email":     email,
             "section":   section,
             "strand":    strand,
-            "profilePictureUrl": ""
+            "profilePictureUrl": "",
+            "emailNotice": email_notice
         })
 
     except Error as e:
@@ -410,17 +535,80 @@ def register():
 
 
 # ------------------------------------------------------------------
+# FORGOT PASSWORD CODE  —  POST /api/forgot-password/send-code
+# Body: { "email": "..." }
+# ------------------------------------------------------------------
+@app.route('/api/forgot-password/send-code', methods=['POST'])
+def send_forgot_password_code():
+    data = request.get_json() or {}
+    email = data.get('email', '').strip()
+
+    if not email:
+        return jsonify({"success": False, "message": "Email is required."}), 400
+
+    if not is_valid_email(email):
+        return jsonify({
+            "success": False,
+            "message": "Please enter a complete email address, such as example@gmail.com."
+        }), 400
+
+    conn = get_db()
+    if not conn:
+        return jsonify({"success": False, "message": "Database connection failed."}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT studentID FROM users WHERE email = %s", (email,))
+        if not cursor.fetchone():
+            return jsonify({"success": False, "message": "No account found with that email."}), 404
+
+        reset_code = f"{secrets.randbelow(1000000):06d}"
+        expires_at = datetime.utcnow() + timedelta(minutes=RESET_CODE_MINUTES)
+
+        cursor.execute(
+            "UPDATE password_reset_codes SET used_at = %s WHERE email = %s AND used_at IS NULL",
+            (datetime.utcnow(), email)
+        )
+        cursor.execute("""
+            INSERT INTO password_reset_codes (email, code_hash, expires_at)
+            VALUES (%s, %s, %s)
+        """, (email, code_hash(reset_code), expires_at))
+
+        try:
+            send_reset_code_email(email, reset_code)
+        except Exception as mail_error:
+            conn.rollback()
+            print(f"[EMAIL RESET ERROR] {mail_error}")
+            return jsonify({
+                "success": False,
+                "message": "Could not send email. Please check the server email settings."
+            }), 500
+
+        conn.commit()
+        return jsonify({
+            "success": True,
+            "message": f"Verification code sent. It expires in {RESET_CODE_MINUTES} minutes."
+        })
+    except Error as e:
+        print(f"[DB RESET CODE ERROR] {e}")
+        return jsonify({"success": False, "message": "Could not create reset code."}), 500
+    finally:
+        conn.close()
+
+
+# ------------------------------------------------------------------
 # RESET PASSWORD  —  POST /api/reset-password
-# Body: { "email": "...", "new_password": "..." }
+# Body: { "email": "...", "code": "...", "new_password": "..." }
 # ------------------------------------------------------------------
 @app.route('/api/reset-password', methods=['POST'])
 def reset_password():
     data         = request.get_json() or {}
     email        = data.get('email', '').strip()
+    code         = data.get('code', '').strip()
     new_password = data.get('new_password', '').strip()
 
-    if not email or not new_password:
-        return jsonify({"success": False, "message": "Email and new password are required."}), 400
+    if not email or not code or not new_password:
+        return jsonify({"success": False, "message": "Email, code, and new password are required."}), 400
 
     if not is_valid_email(email):
         return jsonify({
@@ -445,13 +633,81 @@ def reset_password():
         if not cursor.fetchone():
             return jsonify({"success": False, "message": "No account found with that email."}), 404
 
-        cursor.execute("UPDATE users SET password = %s WHERE email = %s", (new_password, email))
+        cursor.execute("""
+            SELECT id, code_hash
+            FROM password_reset_codes
+            WHERE email = %s AND used_at IS NULL AND expires_at > %s
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+        """, (email, datetime.utcnow()))
+        reset_row = cursor.fetchone()
+
+        if not reset_row or not secrets.compare_digest(reset_row["code_hash"], code_hash(code)):
+            return jsonify({"success": False, "message": "Invalid or expired verification code."}), 400
+
+        cursor.execute("UPDATE users SET password = %s WHERE email = %s", (hash_password(new_password), email))
+        cursor.execute(
+            "UPDATE password_reset_codes SET used_at = %s WHERE id = %s",
+            (datetime.utcnow(), reset_row["id"])
+        )
         conn.commit()
         return jsonify({"success": True, "message": "Password updated successfully."})
 
     except Error as e:
         print(f"[DB RESET ERROR] {e}")
         return jsonify({"success": False, "message": "Could not reset password."}), 500
+    finally:
+        conn.close()
+
+
+# ------------------------------------------------------------------
+# CHANGE PASSWORD  —  POST /api/change-password
+# Body: { "student_id": 1, "current_password": "...", "new_password": "..." }
+# ------------------------------------------------------------------
+@app.route('/api/change-password', methods=['POST'])
+def change_password():
+    data = request.get_json() or {}
+    student_id = data.get('student_id')
+    current_password = data.get('current_password', '').strip()
+    new_password = data.get('new_password', '').strip()
+
+    if not student_id or not current_password or not new_password:
+        return jsonify({
+            "success": False,
+            "message": "Student ID, current password, and new password are required."
+        }), 400
+
+    password_errors = password_validation_errors(new_password)
+    if password_errors:
+        return jsonify({
+            "success": False,
+            "message": password_requirements_message(password_errors)
+        }), 400
+
+    conn = get_db()
+    if not conn:
+        return jsonify({"success": False, "message": "Database connection failed."}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT studentID, password FROM users WHERE studentID = %s", (student_id,))
+        user = cursor.fetchone()
+
+        if not user:
+            return jsonify({"success": False, "message": "Student not found."}), 404
+
+        if not verify_password(user["password"], current_password):
+            return jsonify({"success": False, "message": "Current password is incorrect."}), 401
+
+        cursor.execute(
+            "UPDATE users SET password = %s WHERE studentID = %s",
+            (hash_password(new_password), student_id)
+        )
+        conn.commit()
+        return jsonify({"success": True, "message": "Password changed successfully."})
+    except Error as e:
+        print(f"[DB CHANGE PASSWORD ERROR] {e}")
+        return jsonify({"success": False, "message": "Could not change password."}), 500
     finally:
         conn.close()
 
@@ -676,9 +932,15 @@ def recommend():
     preferences = data.get('preferences', '').lower()
 
     grades = data.get('grades', {})
-    math_grade    = safe_float(grades.get('math',    0))
-    english_grade = safe_float(grades.get('english', 0))
-    science_grade = safe_float(grades.get('science', 0))
+    math_grade    = parse_valid_grade(grades.get('math',    0))
+    english_grade = parse_valid_grade(grades.get('english', 0))
+    science_grade = parse_valid_grade(grades.get('science', 0))
+
+    if None in (math_grade, english_grade, science_grade):
+        return jsonify({
+            "success": False,
+            "error": "Grades must be whole numbers from 0 to 99."
+        }), 400
 
     quiz_scores      = data.get('quiz_scores', {})
     student_id       = data.get('student_id')
