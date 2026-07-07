@@ -47,10 +47,13 @@
             <div class="input-box">
                 <input type="password" id="login-password" class="input-field" placeholder="Password" required>
                 <i class="bx bx-lock-alt"></i>
+                <button type="button" class="password-toggle" aria-label="Show password" onclick="togglePasswordVisibility('login-password', this)">
+                    <i class="bx bx-show"></i>
+                </button>
             </div>
 
             <!-- Error message shown on failed login -->
-            <p id="login-error" style="color:red; font-size:13px; margin: -8px 0 8px 0; display:none;"></p>
+            <p id="login-error" class="form-message message-error" style="display:none;"></p>
 
             <div class="input-box">
                 <input type="button" class="submit" value="Sign In" onclick="loginUser()">
@@ -97,6 +100,17 @@
             <div class="input-box">
                 <input type="password" id="reg-password" class="input-field" placeholder="Password" required>
                 <i class="bx bx-lock-alt"></i>
+                <button type="button" class="password-toggle" aria-label="Show password" onclick="togglePasswordVisibility('reg-password', this)">
+                    <i class="bx bx-show"></i>
+                </button>
+            </div>
+
+            <div class="input-box">
+                <input type="password" id="reg-confirm-password" class="input-field" placeholder="Confirm Password" required>
+                <i class="bx bx-check-shield"></i>
+                <button type="button" class="password-toggle" aria-label="Show confirm password" onclick="togglePasswordVisibility('reg-confirm-password', this)">
+                    <i class="bx bx-show"></i>
+                </button>
             </div>
 
             <div class="input-box select-box">
@@ -112,7 +126,7 @@
                 <i class="bx bx-book-bookmark"></i>
             </div>
 
-            <p id="reg-error" style="color:red; font-size:13px; margin: -8px 0 8px 0; display:none;"></p>
+            <p id="reg-error" class="form-message message-error" style="display:none;"></p>
 
             <div class="input-box">
                 <input type="button" class="submit" value="Register" onclick="registerUser()">
@@ -141,15 +155,21 @@
             <div class="input-box">
                 <input type="password" id="forgot-new-password" class="input-field" placeholder="New Password" required>
                 <i class="bx bx-lock-alt"></i>
+                <button type="button" class="password-toggle" aria-label="Show new password" onclick="togglePasswordVisibility('forgot-new-password', this)">
+                    <i class="bx bx-show"></i>
+                </button>
             </div>
 
             <div class="input-box">
                 <input type="password" id="forgot-confirm-password" class="input-field" placeholder="Confirm New Password" required>
-                <i class="bx bx-lock-alt"></i>
+                <i class="bx bx-check-shield"></i>
+                <button type="button" class="password-toggle" aria-label="Show confirm password" onclick="togglePasswordVisibility('forgot-confirm-password', this)">
+                    <i class="bx bx-show"></i>
+                </button>
             </div>
 
-            <p id="forgot-error" style="color:red; font-size:13px; margin: -8px 0 8px 0; display:none;"></p>
-            <p id="forgot-success" style="color:#1b8a1b; font-size:13px; margin: -8px 0 8px 0; display:none;"></p>
+            <p id="forgot-error" class="form-message message-error" style="display:none;"></p>
+            <p id="forgot-success" class="form-message message-success" style="display:none;"></p>
 
             <div class="input-box">
                 <input type="button" class="submit" value="Reset Password" onclick="resetPassword()">
@@ -198,6 +218,40 @@
         loginBtn.classList.remove("white-btn");
     }
 
+    // Shared form validation keeps the registration and reset flows consistent.
+    const EMAIL_PATTERN = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+    function getPasswordIssues(password) {
+        const issues = [];
+        if (password.length < 8) issues.push("at least 8 characters");
+        if (!/[A-Z]/.test(password)) issues.push("one uppercase letter");
+        if (!/[a-z]/.test(password)) issues.push("one lowercase letter");
+        if (!/[0-9]/.test(password)) issues.push("one number");
+        if (!/[^A-Za-z0-9]/.test(password)) issues.push("one special character");
+        return issues;
+    }
+
+    function showFormMessage(element, message, type = "error") {
+        element.textContent = message;
+        element.className = `form-message message-${type}`;
+        element.style.display = "block";
+    }
+
+    function hideFormMessage(element) {
+        element.textContent = "";
+        element.style.display = "none";
+    }
+
+    function togglePasswordVisibility(inputId, button) {
+        const input = document.getElementById(inputId);
+        const icon = button.querySelector("i");
+        const showing = input.type === "text";
+
+        input.type = showing ? "password" : "text";
+        icon.className = showing ? "bx bx-show" : "bx bx-hide";
+        button.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+    }
+
     // ── REMEMBER ME — restore saved email on page load ─────────────
     (function restoreRememberedUser() {
         const remembered = localStorage.getItem("acadsync-remember-email");
@@ -232,18 +286,27 @@
         const errEl    = document.getElementById("forgot-error");
         const okEl     = document.getElementById("forgot-success");
 
-        errEl.style.display = "none";
-        okEl.style.display  = "none";
+        hideFormMessage(errEl);
+        hideFormMessage(okEl);
 
         if (!email || !newPwd || !confirm) {
-            errEl.textContent   = "Please fill in all fields.";
-            errEl.style.display = "block";
+            showFormMessage(errEl, "Please fill in all fields.");
+            return;
+        }
+
+        if (!EMAIL_PATTERN.test(email)) {
+            showFormMessage(errEl, "Please enter a complete email address, such as example@gmail.com.");
+            return;
+        }
+
+        const passwordIssues = getPasswordIssues(newPwd);
+        if (passwordIssues.length) {
+            showFormMessage(errEl, `Password must include ${passwordIssues.join(", ")}.`);
             return;
         }
 
         if (newPwd !== confirm) {
-            errEl.textContent   = "Passwords do not match.";
-            errEl.style.display = "block";
+            showFormMessage(errEl, "Passwords do not match.");
             return;
         }
 
@@ -256,18 +319,15 @@
             const data = await res.json();
 
             if (data.success) {
-                okEl.textContent   = "Password updated! You can now sign in.";
-                okEl.style.display = "block";
+                showFormMessage(okEl, "Password updated! You can now sign in.", "success");
                 setTimeout(() => {
                     forgotPwdModal.classList.add("hidden");
                 }, 1500);
             } else {
-                errEl.textContent   = data.message || "Could not reset password.";
-                errEl.style.display = "block";
+                showFormMessage(errEl, data.message || "Could not reset password.");
             }
         } catch (err) {
-            errEl.textContent   = "Cannot connect to server. Make sure course.py is running.";
-            errEl.style.display = "block";
+            showFormMessage(errEl, "Cannot connect to server. Make sure course.py is running.");
         }
     }
 
@@ -278,11 +338,10 @@
         const remember = document.getElementById("login-check").checked;
         const errEl    = document.getElementById("login-error");
 
-        errEl.style.display = "none";
+        hideFormMessage(errEl);
 
         if (!email || !password) {
-            errEl.textContent   = "Please enter your email and password.";
-            errEl.style.display = "block";
+            showFormMessage(errEl, "Please enter your email and password.");
             return;
         }
 
@@ -314,13 +373,11 @@
 
                 window.location.href = "Homepage.html";
             } else {
-                errEl.textContent   = data.message || "Invalid email or password.";
-                errEl.style.display = "block";
+                showFormMessage(errEl, data.message || "Invalid email or password.");
             }
 
         } catch (err) {
-            errEl.textContent   = "Cannot connect to server. Make sure course.py is running.";
-            errEl.style.display = "block";
+            showFormMessage(errEl, "Cannot connect to server. Make sure course.py is running.");
         }
     }
 
@@ -330,14 +387,30 @@
         const lastname  = document.getElementById("reg-lastname").value.trim();
         const email     = document.getElementById("reg-email").value.trim();
         const password  = document.getElementById("reg-password").value.trim();
+        const confirm   = document.getElementById("reg-confirm-password").value.trim();
         const strand    = document.getElementById("reg-strand").value;
         const errEl     = document.getElementById("reg-error");
 
-        errEl.style.display = "none";
+        hideFormMessage(errEl);
 
-        if (!firstname || !lastname || !email || !password || !strand) {
-            errEl.textContent   = "Please fill in all fields.";
-            errEl.style.display = "block";
+        if (!firstname || !lastname || !email || !password || !confirm || !strand) {
+            showFormMessage(errEl, "Please fill in all fields.");
+            return;
+        }
+
+        if (!EMAIL_PATTERN.test(email)) {
+            showFormMessage(errEl, "Please enter a complete email address, such as example@gmail.com.");
+            return;
+        }
+
+        const passwordIssues = getPasswordIssues(password);
+        if (passwordIssues.length) {
+            showFormMessage(errEl, `Password must include ${passwordIssues.join(", ")}.`);
+            return;
+        }
+
+        if (password !== confirm) {
+            showFormMessage(errEl, "Password and Confirm Password must match.");
             return;
         }
 
@@ -354,13 +427,11 @@
                 login();
                 document.getElementById("login-email").value = email;
             } else {
-                errEl.textContent   = data.message || "Registration failed.";
-                errEl.style.display = "block";
+                showFormMessage(errEl, data.message || "Registration failed.");
             }
 
         } catch (err) {
-            errEl.textContent   = "Cannot connect to server. Make sure course.py is running.";
-            errEl.style.display = "block";
+            showFormMessage(errEl, "Cannot connect to server. Make sure course.py is running.");
         }
     }
 

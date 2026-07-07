@@ -825,12 +825,44 @@ document.getElementById("sendCodeBtn")?.addEventListener("click", () => {
   showNotification("Verification code sent.", "success");
 });
 
+function getPasswordIssues(password) {
+  const issues = [];
+  if (password.length < 8) issues.push("at least 8 characters");
+  if (!/[A-Z]/.test(password)) issues.push("one uppercase letter");
+  if (!/[a-z]/.test(password)) issues.push("one lowercase letter");
+  if (!/[0-9]/.test(password)) issues.push("one number");
+  if (!/[^A-Za-z0-9]/.test(password)) issues.push("one special character");
+  return issues;
+}
+
+document.querySelectorAll("[data-password-target]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const input = document.getElementById(button.dataset.passwordTarget);
+    const icon = button.querySelector("i");
+    const showing = input?.type === "text";
+
+    if (!input || !icon) return;
+    input.type = showing ? "password" : "text";
+    icon.className = showing ? "bx bx-show" : "bx bx-hide";
+    button.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+  });
+});
+
 document.getElementById("savePwdBtn")?.addEventListener("click", () => {
   const newPwd = document.getElementById("pwd-new")?.value || "";
   const confirmPwd = document.getElementById("pwd-confirm")?.value || "";
 
   if (!newPwd || !confirmPwd) {
     showNotification("Please fill in both password fields.", "warning");
+    return;
+  }
+
+  const passwordIssues = getPasswordIssues(newPwd);
+  if (passwordIssues.length) {
+    showNotification(
+      `Password must include ${passwordIssues.join(", ")}.`,
+      "warning",
+    );
     return;
   }
 

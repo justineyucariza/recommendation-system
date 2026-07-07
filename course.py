@@ -1,4 +1,5 @@
 import os
+import re
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory, abort
 from flask_cors import CORS
@@ -33,6 +34,7 @@ DB_CONFIG = {
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads", "profile-pictures")
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+EMAIL_PATTERN = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
 FRONTEND_FILES = {
     "index.html",
     "Homepage.html",
@@ -88,6 +90,31 @@ def is_allowed_image(filename):
         return False
     extension = filename.rsplit(".", 1)[1].lower()
     return extension in ALLOWED_IMAGE_EXTENSIONS
+
+
+def is_valid_email(email):
+    return bool(EMAIL_PATTERN.fullmatch(email or ""))
+
+
+def password_validation_errors(password):
+    """Return clear requirements missing from a proposed account password."""
+    errors = []
+    password = password or ""
+    if len(password) < 8:
+        errors.append("at least 8 characters")
+    if not re.search(r"[A-Z]", password):
+        errors.append("one uppercase letter")
+    if not re.search(r"[a-z]", password):
+        errors.append("one lowercase letter")
+    if not re.search(r"\d", password):
+        errors.append("one number")
+    if not re.search(r"[^A-Za-z0-9]", password):
+        errors.append("one special character")
+    return errors
+
+
+def password_requirements_message(errors):
+    return "Password must include " + ", ".join(errors) + "."
 
 
 # ------------------------------------------------------------------
@@ -327,6 +354,19 @@ def register():
     if not all([firstname, lastname, email, password, strand]):
         return jsonify({"success": False, "message": "Please fill in all fields."}), 400
 
+    if not is_valid_email(email):
+        return jsonify({
+            "success": False,
+            "message": "Please enter a complete email address, such as example@gmail.com."
+        }), 400
+
+    password_errors = password_validation_errors(password)
+    if password_errors:
+        return jsonify({
+            "success": False,
+            "message": password_requirements_message(password_errors)
+        }), 400
+
     conn = get_db()
     if not conn:
         return jsonify({"success": False, "message": "Database connection failed."}), 500
@@ -378,6 +418,19 @@ def reset_password():
 
     if not email or not new_password:
         return jsonify({"success": False, "message": "Email and new password are required."}), 400
+
+    if not is_valid_email(email):
+        return jsonify({
+            "success": False,
+            "message": "Please enter a complete email address, such as example@gmail.com."
+        }), 400
+
+    password_errors = password_validation_errors(new_password)
+    if password_errors:
+        return jsonify({
+            "success": False,
+            "message": password_requirements_message(password_errors)
+        }), 400
 
     conn = get_db()
     if not conn:

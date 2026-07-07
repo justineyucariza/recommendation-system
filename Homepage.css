@@ -3073,3 +3073,99 @@ body.dark-mode .btn-settings-link {
         align-items: flex-start;
     }
 }
+
+/* Modern icon alignment and a targeted scroll fix for the settings modal. */
+.btn i,
+.nav-item i,
+.filter-header i,
+.leaderboard-title i,
+.modal-header i,
+.btn-retake i,
+.setting-row label i,
+.setting-column label i {
+    font-size: 1.15em;
+    color: currentColor;
+    line-height: 1;
+}
+
+.btn,
+.nav-item,
+.filter-header,
+.leaderboard-title,
+.modal-header,
+.btn-retake,
+.setting-row label,
+.setting-column label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nav-item,
+.filter-header,
+.leaderboard-title,
+.modal-header {
+    justify-content: center;
+}
+
+.settings-modal-box {
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.settings-modal-box .modal-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.settings-modal-box .modal-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+}
+
+.password-input-wrap {
+    position: relative;
+}
+
+.password-input-wrap .dark-input-field {
+    width: 100%;
+    padding-right: 48px;
+}
+
+.dashboard-password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    width: 34px;
+    height: 34px;
+    transform: translateY(-50%);
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--primary-dark);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+}
+
+.dashboard-password-toggle:hover,
+.dashboard-password-toggle:focus-visible {
+    background: rgba(27, 138, 27, .12);
+    outline: none;
+}
+
+@media (max-width: 560px) {
+    .settings-modal-box {
+        width: calc(100vw - 20px);
+        max-height: calc(100dvh - 20px);
+    }
+
+    .nav-item {
+        flex-direction: column;
+        gap: 4px;
+        font-size: .76rem;
+    }
+}

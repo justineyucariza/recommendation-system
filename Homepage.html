@@ -72,7 +72,8 @@
                         class="btn btn-blue"
                         type="button">
 
-                        ⚙️ Settings
+                        <i class="bx bx-cog" aria-hidden="true"></i>
+                        <span>Settings</span>
 
                     </button>
 
@@ -81,7 +82,8 @@
                         class="btn btn-red"
                         type="button">
 
-                        ↪ Logout
+                        <i class="bx bx-log-out" aria-hidden="true"></i>
+                        <span>Logout</span>
 
                     </button>
 
@@ -104,7 +106,8 @@
                 class="nav-item active"
                 onclick="switchTab(0)">
 
-                🏠 HOME
+                <i class="bx bx-home-alt" aria-hidden="true"></i>
+                <span>Home</span>
 
             </button>
 
@@ -113,7 +116,8 @@
                 class="nav-item"
                 onclick="switchTab(1)">
 
-                📚 COURSE CATALOG
+                <i class="bx bx-book-open" aria-hidden="true"></i>
+                <span>Course Catalog</span>
 
             </button>
 
@@ -122,7 +126,8 @@
                 class="nav-item"
                 onclick="switchTab(2)">
 
-                🤖 ASSESSMENT QUIZ
+                <i class="bx bx-edit-alt" aria-hidden="true"></i>
+                <span>Assessment Quiz</span>
 
             </button>
 
@@ -131,7 +136,8 @@
                 class="nav-item"
                 onclick="switchTab(3)">
 
-                🏆 LEADERBOARD
+                <i class="bx bx-trophy" aria-hidden="true"></i>
+                <span>Leaderboard</span>
 
             </button>
 
@@ -155,7 +161,8 @@
 
                     <div class="filter-header">
 
-                        📊 Filters
+                        <i class="bx bx-slider-alt" aria-hidden="true"></i>
+                        <span>Filters</span>
 
                     </div>
 
@@ -1133,7 +1140,8 @@
             class="btn-step-back btn-retake"
             onclick="resetAssessmentFlow()">
 
-            🔄 Retake Assessment
+            <i class="bx bx-refresh" aria-hidden="true"></i>
+            <span>Retake Assessment</span>
 
         </button>
 
@@ -1154,7 +1162,10 @@
 
         <div class="leaderboard-header-row">
 
-            <h2 class="leaderboard-title">🏆 Quiz Leaderboard</h2>
+            <h2 class="leaderboard-title">
+                <i class="bx bx-trophy" aria-hidden="true"></i>
+                <span>Quiz Leaderboard</span>
+            </h2>
 
             <p class="leaderboard-subtitle">
                 Ranked by each student's best quiz result. Ties are broken by shortest completion time.
@@ -1213,7 +1224,8 @@
 
         <div class="modal-header">
 
-            ⚠️ Logout Confirmation
+            <i class="bx bx-error-circle" aria-hidden="true"></i>
+            <span>Logout Confirmation</span>
 
         </div>
 
@@ -1304,13 +1316,13 @@
 
                         <option value="email">
 
-                            📧 Email Address
+                            Email Address
 
                         </option>
 
                         <option value="phone">
 
-                            📱 Mobile Number
+                            Mobile Number
 
                         </option>
 
@@ -1375,10 +1387,19 @@
 
                     </label>
 
-                    <input
-                        type="password"
-                        id="pwd-new"
-                        class="dark-input-field">
+                    <div class="password-input-wrap">
+                        <input
+                            type="password"
+                            id="pwd-new"
+                            class="dark-input-field">
+                        <button
+                            type="button"
+                            class="dashboard-password-toggle"
+                            aria-label="Show password"
+                            data-password-target="pwd-new">
+                            <i class="bx bx-show" aria-hidden="true"></i>
+                        </button>
+                    </div>
 
                 </div>
 
@@ -1390,10 +1411,19 @@
 
                     </label>
 
-                    <input
-                        type="password"
-                        id="pwd-confirm"
-                        class="dark-input-field">
+                    <div class="password-input-wrap">
+                        <input
+                            type="password"
+                            id="pwd-confirm"
+                            class="dark-input-field">
+                        <button
+                            type="button"
+                            class="dashboard-password-toggle"
+                            aria-label="Show confirm password"
+                            data-password-target="pwd-confirm">
+                            <i class="bx bx-show" aria-hidden="true"></i>
+                        </button>
+                    </div>
 
                 </div>
 
@@ -1433,7 +1463,8 @@
 
         <div class="modal-header">
 
-            ⚙️ Portal Settings
+            <i class="bx bx-cog" aria-hidden="true"></i>
+            <span>Portal Settings</span>
 
         </div>
 
@@ -1443,7 +1474,8 @@
 
                 <label>
 
-                    🖼️ Profile Picture
+                    <i class="bx bx-image" aria-hidden="true"></i>
+                    <span>Profile Picture</span>
 
                 </label>
 
@@ -1484,7 +1516,8 @@
 
                 <label for="settings-darkmode">
 
-                    🌙 Dark Mode
+                    <i class="bx bx-moon" aria-hidden="true"></i>
+                    <span>Dark Mode</span>
 
                 </label>
 
@@ -1498,7 +1531,8 @@
 
                 <label for="settings-lang">
 
-                    🌐 Language
+                    <i class="bx bx-globe" aria-hidden="true"></i>
+                    <span>Language</span>
 
                 </label>
 
@@ -1524,7 +1558,8 @@
 
                 <label for="settings-notify">
 
-                    📧 Email Notifications
+                    <i class="bx bx-envelope" aria-hidden="true"></i>
+                    <span>Email Notifications</span>
 
                 </label>
 
@@ -1539,7 +1574,8 @@
 
                 <label>
 
-                    🔑 Password
+                    <i class="bx bx-key" aria-hidden="true"></i>
+                    <span>Password</span>
 
                 </label>
 
