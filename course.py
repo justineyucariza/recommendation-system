@@ -781,20 +781,36 @@ def recommend():
         if conn:
             try:
                 cursor = conn.cursor()
-                winner_course_id = get_course_id(cursor, winner)
-                runner_up_course_id = get_course_id(cursor, runner_up)
 
-                # Save to recommendations history (existing table)
-                cursor.execute("""
-                    INSERT INTO recommendations
-                        (studentID, recommended_course_id, alternative_course_id, alignment_score)
-                    VALUES (%s, %s, %s, %s)
-                """, (
-                    student_id,
-                    winner_course_id,
-                    runner_up_course_id,
-                    alignment_score
-                ))
+                # Save to recommendations history. Newer deployments use course
+                # title columns; older local DBs may still use course_id columns.
+                try:
+                    cursor.execute("""
+                        INSERT INTO recommendations
+                            (studentID, recommended_course, alternative_course, alignment_score)
+                        VALUES (%s, %s, %s, %s)
+                    """, (
+                        student_id,
+                        course_metadata[winner]["title"],
+                        course_metadata[runner_up]["title"],
+                        f"{alignment_score}%"
+                    ))
+                except Error as text_insert_error:
+                    try:
+                        winner_course_id = get_course_id(cursor, winner)
+                        runner_up_course_id = get_course_id(cursor, runner_up)
+                        cursor.execute("""
+                            INSERT INTO recommendations
+                                (studentID, recommended_course_id, alternative_course_id, alignment_score)
+                            VALUES (%s, %s, %s, %s)
+                        """, (
+                            student_id,
+                            winner_course_id,
+                            runner_up_course_id,
+                            alignment_score
+                        ))
+                    except Error as id_insert_error:
+                        print(f"[DB RECOMMENDATION SAVE ERROR] {text_insert_error}; {id_insert_error}")
 
                 # Compute a total_score for the leaderboard:
                 # average of the 6 per-category quiz percentages (0-100 each)
