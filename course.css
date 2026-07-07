@@ -31,6 +31,7 @@
 
 body {
     min-height: 100vh;
+    font-size: 14px;
     color: #fff;
     background:
         linear-gradient(135deg, rgba(18, 61, 42, .38), rgba(47, 158, 98, .20)),
@@ -188,7 +189,7 @@ body {
 
 header {
     color: #fff;
-    font-size: 2rem;
+    font-size: 1.72rem;
     font-weight: 800;
     text-align: center;
     margin-bottom: 26px;
@@ -400,15 +401,46 @@ header {
     margin-bottom: 10px;
 }
 
+.modal-head span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
 .modal-head i {
-    cursor: pointer;
     color: var(--ink-500);
-    font-size: 1.45rem;
+    font-size: 1.3rem;
     transition: var(--speed);
+}
+
+.modal-close-btn {
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+}
+
+.modal-close-btn:hover,
+.modal-close-btn:focus-visible {
+    background: var(--brand-100);
+    outline: none;
 }
 
 .modal-head i:hover {
     color: var(--brand-700);
+}
+
+.forgot-flow-box {
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+}
+
+.secondary-submit {
+    background: linear-gradient(135deg, var(--brand-800), var(--brand-600));
 }
 
 .modal-sub {

@@ -821,6 +821,10 @@ document
   .getElementById("cancelPwdBtn")
   ?.addEventListener("click", () => closeModal("passwordModal"));
 
+document
+  .getElementById("closePwdBtn")
+  ?.addEventListener("click", () => closeModal("passwordModal"));
+
 document.getElementById("sendCodeBtn")?.addEventListener("click", () => {
   showNotification("Verification code sent.", "success");
 });

@@ -138,18 +138,36 @@
 
     <!-- FORGOT PASSWORD MODAL -->
     <div class="modal-overlay hidden" id="forgotPwdModal">
-        <div class="modal-box">
+        <div class="modal-box forgot-flow-box">
 
             <div class="modal-head">
-                <span>Reset Password</span>
-                <i class="bx bx-x" id="closeForgotPwd"></i>
+                <span><i class="bx bx-key"></i> Forgot Password</span>
+                <button type="button" class="modal-close-btn" id="closeForgotPwd" aria-label="Close forgot password">
+                    <i class="bx bx-x"></i>
+                </button>
             </div>
 
-            <p class="modal-sub">Enter the email on your account and choose a new password.</p>
+            <p class="modal-sub">Verify your account, enter the code, then choose a new password.</p>
 
             <div class="input-box">
                 <input type="email" id="forgot-email" class="input-field" placeholder="Email" required>
                 <i class="bx bx-envelope"></i>
+            </div>
+
+            <div class="input-box select-box">
+                <select id="forgot-method" class="input-field" required>
+                    <option value="email" selected>Email Address</option>
+                </select>
+                <i class="bx bx-shield-quarter"></i>
+            </div>
+
+            <div class="input-box">
+                <input type="button" class="submit secondary-submit" value="Send Verification Code" onclick="sendForgotCode()">
+            </div>
+
+            <div class="input-box">
+                <input type="text" id="forgot-code" class="input-field" placeholder="Verification Code" inputmode="numeric" required>
+                <i class="bx bx-message-square-check"></i>
             </div>
 
             <div class="input-box">
@@ -170,6 +188,7 @@
 
             <p id="forgot-error" class="form-message message-error" style="display:none;"></p>
             <p id="forgot-success" class="form-message message-success" style="display:none;"></p>
+            <p id="forgot-code-hint" class="form-message message-warning" style="display:none;"></p>
 
             <div class="input-box">
                 <input type="button" class="submit" value="Reset Password" onclick="resetPassword()">
@@ -263,11 +282,13 @@
 
     // ── FORGOT PASSWORD — modal open/close ─────────────────────────
     const forgotPwdModal = document.getElementById("forgotPwdModal");
+    let forgotVerificationCode = "";
 
     document.getElementById("forgotPwdLink").addEventListener("click", (e) => {
         e.preventDefault();
-        document.getElementById("forgot-error").style.display = "none";
-        document.getElementById("forgot-success").style.display = "none";
+        ["forgot-error", "forgot-success", "forgot-code-hint"].forEach((id) => {
+            document.getElementById(id).style.display = "none";
+        });
         forgotPwdModal.classList.remove("hidden");
     });
 
@@ -279,8 +300,35 @@
         if (e.target === forgotPwdModal) forgotPwdModal.classList.add("hidden");
     });
 
+    function sendForgotCode() {
+        const email = document.getElementById("forgot-email").value.trim();
+        const errEl = document.getElementById("forgot-error");
+        const hintEl = document.getElementById("forgot-code-hint");
+
+        hideFormMessage(errEl);
+        hideFormMessage(hintEl);
+
+        if (!email) {
+            showFormMessage(errEl, "Please enter your email before sending a verification code.");
+            return;
+        }
+
+        if (!EMAIL_PATTERN.test(email)) {
+            showFormMessage(errEl, "Please enter a complete email address, such as example@gmail.com.");
+            return;
+        }
+
+        forgotVerificationCode = String(Math.floor(100000 + Math.random() * 900000));
+        showFormMessage(
+            hintEl,
+            `Verification code sent. Demo code: ${forgotVerificationCode}`,
+            "warning"
+        );
+    }
+
     async function resetPassword() {
         const email    = document.getElementById("forgot-email").value.trim();
+        const code     = document.getElementById("forgot-code").value.trim();
         const newPwd   = document.getElementById("forgot-new-password").value.trim();
         const confirm  = document.getElementById("forgot-confirm-password").value.trim();
         const errEl    = document.getElementById("forgot-error");
@@ -289,13 +337,23 @@
         hideFormMessage(errEl);
         hideFormMessage(okEl);
 
-        if (!email || !newPwd || !confirm) {
+        if (!email || !code || !newPwd || !confirm) {
             showFormMessage(errEl, "Please fill in all fields.");
             return;
         }
 
         if (!EMAIL_PATTERN.test(email)) {
             showFormMessage(errEl, "Please enter a complete email address, such as example@gmail.com.");
+            return;
+        }
+
+        if (!forgotVerificationCode) {
+            showFormMessage(errEl, "Please send a verification code first.");
+            return;
+        }
+
+        if (code !== forgotVerificationCode) {
+            showFormMessage(errEl, "The verification code is incorrect.");
             return;
         }
 
@@ -320,6 +378,7 @@
 
             if (data.success) {
                 showFormMessage(okEl, "Password updated! You can now sign in.", "success");
+                forgotVerificationCode = "";
                 setTimeout(() => {
                     forgotPwdModal.classList.add("hidden");
                 }, 1500);
@@ -427,7 +486,10 @@
                 login();
                 document.getElementById("login-email").value = email;
             } else {
-                showFormMessage(errEl, data.message || "Registration failed.");
+                const message = res.status === 409
+                    ? "This email is already registered. Please log in or use another email."
+                    : data.message || "Registration failed.";
+                showFormMessage(errEl, message);
             }
 
         } catch (err) {

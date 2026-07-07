@@ -376,7 +376,10 @@ def register():
 
         cursor.execute("SELECT studentID FROM users WHERE email = %s", (email,))
         if cursor.fetchone():
-            return jsonify({"success": False, "message": "Email already registered."}), 409
+            return jsonify({
+                "success": False,
+                "message": "This email is already registered. Please log in or use another email."
+            }), 409
 
         strand_id = get_or_create_strand_id(cursor, strand)
 
