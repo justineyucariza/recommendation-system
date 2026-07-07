@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 06, 2026 at 11:24 AM
+-- Generation Time: Jul 07, 2026 at 09:59 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -137,7 +137,8 @@ CREATE TABLE `quiz_results` (
 --
 
 INSERT INTO `quiz_results` (`id`, `studentID`, `total_score`, `time_taken_seconds`, `recommended_course_id`, `created_at`, `alignment_score`, `recommended_course`) VALUES
-(1, 2, 71.2, 123, NULL, '2026-07-06 09:23:24', '97%', 'Bachelor of Science in Information Technology (BSIT)');
+(1, 2, 71.2, 123, NULL, '2026-07-06 09:23:24', '97%', 'Bachelor of Science in Information Technology (BSIT)'),
+(2, 3, 71.2, 111, NULL, '2026-07-06 09:39:04', '97%', 'Bachelor of Science in Information Technology (BSIT)');
 
 -- --------------------------------------------------------
 
@@ -159,7 +160,8 @@ CREATE TABLE `recommendations` (
 --
 
 INSERT INTO `recommendations` (`id`, `studentID`, `recommended_course_id`, `alternative_course_id`, `alignment_score`, `created_at`) VALUES
-(1, 2, 1, 5, 97.00, '2026-07-06 09:23:24');
+(1, 2, 1, 5, 97.00, '2026-07-06 09:23:24'),
+(2, 3, 1, 5, 97.00, '2026-07-06 09:39:04');
 
 -- --------------------------------------------------------
 
@@ -208,7 +210,7 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`studentID`, `first_name`, `last_name`, `email`, `password`, `strand_id`, `section`, `created_at`, `profile_picture`) VALUES
 (2, 'Test', 'User', 'test1783357000@example.com', 'pass123', 2, 'A', '2026-07-06 08:56:40', NULL),
-(3, 'Justine James', 'Gepulla', 'gepulla.20231513@cscqc.edu.ph', 'gepulla20', 1, NULL, '2026-07-06 08:59:08', NULL);
+(3, 'Justine James', 'Gepulla', 'gepulla.20231513@cscqc.edu.ph', 'gepulla20', 1, NULL, '2026-07-06 08:59:08', 'student_3_20260706173054.jpg');
 
 -- --------------------------------------------------------
 
@@ -330,13 +332,13 @@ ALTER TABLE `quiz_questions`
 -- AUTO_INCREMENT for table `quiz_results`
 --
 ALTER TABLE `quiz_results`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `recommendations`
 --
 ALTER TABLE `recommendations`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `strands`
