@@ -13,7 +13,7 @@
     --ink-500: #6b7a72;
     --line: #dce8e1;
     --surface: #ffffff;
-    --surface-soft: rgba(255, 255, 255, .9);
+    --surface-soft: rgba(18, 61, 42, .34);
     --danger: #d92d20;
     --success: #16833d;
     --shadow-sm: 0 8px 24px rgba(18, 61, 42, .08);
@@ -31,9 +31,9 @@
 
 body {
     min-height: 100vh;
-    color: var(--ink-900);
+    color: #fff;
     background:
-        linear-gradient(135deg, rgba(244, 251, 247, .94), rgba(224, 242, 233, .88)),
+        linear-gradient(135deg, rgba(18, 61, 42, .38), rgba(47, 158, 98, .20)),
         url("Acadsync.jpg") center / cover fixed no-repeat;
 }
 
@@ -54,7 +54,7 @@ body {
     font-size: clamp(3.5rem, 12vw, 9rem);
     line-height: 1;
     font-weight: 800;
-    color: rgba(18, 61, 42, .06);
+    color: rgba(255, 255, 255, .08);
     pointer-events: none;
 }
 
@@ -131,10 +131,10 @@ body {
     overflow: hidden;
     padding: 34px 0;
     background: var(--surface-soft);
-    border: 1px solid rgba(255, 255, 255, .72);
+    border: 1px solid rgba(255, 255, 255, .30);
     border-radius: 8px;
     box-shadow: var(--shadow-lg);
-    backdrop-filter: blur(18px);
+    backdrop-filter: blur(8px);
 }
 
 .form-box::before {
@@ -165,7 +165,7 @@ body {
 }
 
 .top span {
-    color: var(--ink-500);
+    color: rgba(255, 255, 255, .90);
     font-size: .9rem;
     display: flex;
     justify-content: center;
@@ -175,19 +175,19 @@ body {
 
 .top span a,
 .two a {
-    color: var(--brand-700);
+    color: #fff;
     font-weight: 700;
     text-decoration: none;
 }
 
 .top span a:hover,
 .two a:hover {
-    color: var(--brand-900);
+    color: var(--brand-100);
     text-decoration: underline;
 }
 
 header {
-    color: var(--ink-900);
+    color: #fff;
     font-size: 2rem;
     font-weight: 800;
     text-align: center;
@@ -209,11 +209,11 @@ header {
     width: 100%;
     height: 52px;
     padding: 0 16px 0 46px;
-    border: 1px solid var(--line);
+    border: 1px solid rgba(255, 255, 255, .34);
     border-radius: var(--radius);
     outline: none;
     color: var(--ink-900);
-    background: #fff;
+    background: rgba(255, 255, 255, .84);
     transition: var(--speed);
 }
 
@@ -224,6 +224,7 @@ header {
 .input-field:hover,
 .input-field:focus {
     border-color: var(--brand-500);
+    background: rgba(255, 255, 255, .94);
     box-shadow: 0 0 0 4px rgba(47, 158, 98, .14);
 }
 
@@ -260,7 +261,7 @@ header {
     justify-content: space-between;
     align-items: center;
     gap: 12px;
-    color: var(--ink-700);
+    color: rgba(255, 255, 255, .92);
     font-size: .86rem;
     margin-top: 12px;
 }
