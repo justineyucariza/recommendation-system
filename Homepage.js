@@ -154,6 +154,9 @@ if (footerYearEl) {
   footerYearEl.textContent = new Date().getFullYear();
 }
 
+let latestRecommendationResult = null;
+let leaderboardEntries = [];
+
 async function refreshSessionProfile() {
   const studentID = sessionStorage.getItem("studentID");
   if (!studentID) return;
@@ -182,12 +185,43 @@ async function refreshSessionProfile() {
 
     syncHeaderProfilePicture();
     syncSettingsProfilePicturePreview();
+    updateProfileCompletion();
   } catch (err) {
     console.warn("Could not refresh profile.", err);
   }
 }
 
 refreshSessionProfile();
+updateProfileCompletion();
+
+function updateProfileCompletion(hasQuizHistory) {
+  const checks = [
+    Boolean(sessionStorage.getItem("studentName")),
+    Boolean(sessionStorage.getItem("studentStrand")),
+    Boolean(sessionStorage.getItem("studentSection")),
+    Boolean(sessionStorage.getItem("studentProfilePicture")),
+  ];
+
+  if (typeof hasQuizHistory === "boolean") {
+    sessionStorage.setItem("studentHasQuizHistory", hasQuizHistory ? "1" : "0");
+  }
+  checks.push(sessionStorage.getItem("studentHasQuizHistory") === "1");
+
+  const completed = checks.filter(Boolean).length;
+  const percent = Math.round((completed / checks.length) * 100);
+  const textEl = document.getElementById("profileCompletionText");
+  const hintEl = document.getElementById("profileCompletionHint");
+  const fillEl = document.getElementById("profileCompletionFill");
+
+  if (textEl) textEl.textContent = `${percent}% complete`;
+  if (fillEl) fillEl.style.width = `${percent}%`;
+  if (hintEl) {
+    hintEl.textContent =
+      percent === 100
+        ? "Great job. Your profile and assessment history are complete."
+        : "Add your section, profile picture, and assessment history for a richer profile.";
+  }
+}
 
 const quizState = {
   currentQuestion: 0,
@@ -409,6 +443,10 @@ function navigateStep(step) {
 }
 
 function resetAssessmentFlow() {
+  openModal("retakeConfirmModal");
+}
+
+function performAssessmentReset() {
   navigateStep(1);
 
   document.getElementById("student-strand").selectedIndex = 0;
@@ -431,6 +469,8 @@ function resetAssessmentFlow() {
   document.getElementById("ai-res-title").textContent = "Assessment Reset";
   document.getElementById("ai-res-reasoning").textContent = "";
   document.getElementById("ai-res-pathways").innerHTML = "";
+  latestRecommendationResult = null;
+  renderRecommendationExtras(null);
 }
 
 // Quiz timer — tracks seconds from when the quiz panel opens to submission
@@ -611,6 +651,7 @@ async function submitFullAssessmentToAI() {
 
 function displayRecommendation(result) {
   // FIX: uses real API result instead of hardcoded values
+  latestRecommendationResult = result;
   document.getElementById("ai-res-badge").textContent = result.alignment_score;
   document.getElementById("ai-res-title").textContent =
     result.recommended_course_title;
@@ -631,6 +672,167 @@ function displayRecommendation(result) {
     .join("");
 
   document.getElementById("ai-res-pathways").innerHTML = pathwayList;
+  renderRecommendationExtras(result);
+}
+
+function renderRecommendationExtras(result) {
+  const breakdownEl = document.getElementById("recommendationBreakdownList");
+  const comparisonEl = document.getElementById("courseComparisonList");
+
+  if (!result) {
+    if (breakdownEl) {
+      breakdownEl.textContent = "Complete the assessment to see your match breakdown.";
+    }
+    if (comparisonEl) {
+      comparisonEl.textContent = "Your top course and alternative will appear here.";
+    }
+    return;
+  }
+
+  const winnerKey = result.recommended_course_key;
+  const categoryScores = result.category_scores?.[winnerKey] || {};
+  const weights = result.weights || {};
+  const labels = {
+    interest: "Interests",
+    skill: "Skills",
+    career: "Career Preference",
+    academic: "Academic Performance",
+    preference: "Preferences",
+    quiz: "Assessment Quiz",
+  };
+
+  if (breakdownEl) {
+    breakdownEl.innerHTML = Object.keys(labels)
+      .map((key) => {
+        const score = Math.round(Number(categoryScores[key]) || 0);
+        const weight = weights[key] || 0;
+        return `
+          <div class="breakdown-row">
+            <div>
+              <strong>${labels[key]}</strong>
+              <span>${weight}% weight</span>
+            </div>
+            <div class="breakdown-meter" aria-hidden="true">
+              <div style="width:${score}%"></div>
+            </div>
+            <b>${score}%</b>
+          </div>`;
+      })
+      .join("");
+  }
+
+  if (comparisonEl) {
+    const matches = result.course_matches || [];
+    const top = matches.find((course) => course.key === result.recommended_course_key) || matches[0];
+    const alt =
+      matches.find((course) => course.key === result.alternative_course_key) ||
+      matches[1];
+
+    comparisonEl.innerHTML = [top, alt]
+      .filter(Boolean)
+      .map(
+        (course, index) => `
+          <div class="comparison-card ${index === 0 ? "best" : ""}">
+            <span>${index === 0 ? "Top Match" : "Alternative"}</span>
+            <strong>${course.title}</strong>
+            <b>${Math.round(Number(course.score) || 0)}% match</b>
+          </div>`,
+      )
+      .join("");
+  }
+}
+
+function buildResultSummaryText(result) {
+  const name = sessionStorage.getItem("studentName") || "Student";
+  const pathways = (result.pathways || []).map((pathway) => `- ${pathway}`).join("\n");
+  return [
+    "AcadSync Assessment Result",
+    "",
+    `Student: ${name}`,
+    `Top recommendation: ${result.recommended_course_title}`,
+    `Alternative recommendation: ${result.alternative_course_title}`,
+    `Course match: ${result.alignment_score}`,
+    "",
+    "Suggested Career Pathways:",
+    pathways || "- No pathways listed",
+    "",
+    "This recommendation combines interests, skills, grades, preferences, and quiz answers.",
+  ].join("\n");
+}
+
+function downloadRecommendationPdf() {
+  if (!latestRecommendationResult) {
+    showNotification("Please finish the assessment before downloading.", "warning");
+    return;
+  }
+
+  const resultText = buildResultSummaryText(latestRecommendationResult);
+  const printWindow = window.open("", "_blank", "width=820,height=900");
+
+  if (!printWindow) {
+    showNotification("Please allow pop-ups to download the result.", "warning");
+    return;
+  }
+
+  printWindow.document.write(`
+    <!doctype html>
+    <html>
+      <head>
+        <title>AcadSync Assessment Result</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 32px; color: #132018; line-height: 1.55; }
+          h1 { color: #123d2a; margin-bottom: 8px; }
+          .badge { display: inline-block; padding: 10px 14px; border-radius: 8px; background: #e8f6ee; color: #123d2a; font-weight: 700; }
+          pre { white-space: pre-wrap; font-family: inherit; font-size: 15px; }
+        </style>
+      </head>
+      <body>
+        <h1>AcadSync Assessment Result</h1>
+        <div class="badge">${latestRecommendationResult.alignment_score} Course Match</div>
+        <pre>${resultText.replace(/[&<>"']/g, (char) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#039;",
+        })[char])}</pre>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.print();
+}
+
+async function emailRecommendationResult() {
+  if (!latestRecommendationResult) {
+    showNotification("Please finish the assessment before emailing the result.", "warning");
+    return;
+  }
+
+  const studentId = sessionStorage.getItem("studentID");
+  if (!studentId) {
+    showNotification("Please sign in before emailing your result.", "warning");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/api/email-assessment-result`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        student_id: studentId,
+        result: latestRecommendationResult,
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "Could not email assessment result.");
+    }
+    showNotification(data.message || "Assessment result sent.", "success");
+  } catch (err) {
+    showNotification(err.message || "Could not email assessment result.", "warning");
+  }
 }
 
 function viewCourseDetails(course) {
@@ -1059,6 +1261,7 @@ async function uploadProfilePicture(file) {
   );
   syncHeaderProfilePicture();
   syncSettingsProfilePicturePreview();
+  updateProfileCompletion();
 
   return result;
 }
@@ -1079,8 +1282,11 @@ async function loadQuizHistory() {
     if (!data.success || !Array.isArray(data.history) || !data.history.length) {
       container.innerHTML =
         '<div class="quiz-history-empty">No quiz history yet.</div>';
+      updateProfileCompletion(false);
       return;
     }
+
+    updateProfileCompletion(true);
 
     container.innerHTML = data.history
       .map(function (entry) {
@@ -1102,6 +1308,7 @@ async function loadQuizHistory() {
   } catch (err) {
     container.innerHTML =
       '<div class="quiz-history-empty">Could not load quiz history.</div>';
+    updateProfileCompletion(false);
     console.error("Quiz history error:", err);
   }
 }
@@ -1150,6 +1357,27 @@ document.querySelectorAll(".modal-overlay").forEach((overlay) => {
       overlay.classList.add("hidden");
     }
   });
+});
+
+document
+  .getElementById("downloadResultBtn")
+  ?.addEventListener("click", downloadRecommendationPdf);
+
+document
+  .getElementById("emailResultBtn")
+  ?.addEventListener("click", emailRecommendationResult);
+
+document
+  .getElementById("leaderboardSearchInput")
+  ?.addEventListener("input", filterLeaderboardRows);
+
+document.getElementById("cancelRetakeBtn")?.addEventListener("click", () => {
+  closeModal("retakeConfirmModal");
+});
+
+document.getElementById("confirmRetakeBtn")?.addEventListener("click", () => {
+  closeModal("retakeConfirmModal");
+  performAssessmentReset();
 });
 
 // ---------- Quiz panel navigation buttons ----------
@@ -1225,14 +1453,39 @@ async function loadLeaderboard() {
     if (!data.success || !data.leaderboard.length) {
       tbody.innerHTML =
         '<tr><td colspan="5" class="lb-loading">No quiz results yet. Complete the assessment to appear on the leaderboard!</td></tr>';
+      leaderboardEntries = [];
       updateLeaderboardStats([]);
       return;
     }
 
-    let myEntry = null;
+    leaderboardEntries = data.leaderboard;
     updateLeaderboardStats(data.leaderboard);
+    renderLeaderboardRows(data.leaderboard);
+  } catch (err) {
+    tbody.innerHTML =
+      '<tr><td colspan="5" class="lb-loading">Could not load leaderboard. Make sure course.py is running.</td></tr>';
+    updateLeaderboardStats([]);
+    console.error("Leaderboard error:", err);
+  }
+}
 
-    tbody.innerHTML = data.leaderboard
+function renderLeaderboardRows(entries) {
+  const tbody = document.getElementById("leaderboardBody");
+  const myCard = document.getElementById("myRankCard");
+  const currentStudentId = sessionStorage.getItem("studentID");
+
+  if (!tbody) return;
+
+  if (!entries.length) {
+    tbody.innerHTML =
+      '<tr><td colspan="5" class="lb-loading">No matching leaderboard records found.</td></tr>';
+    if (myCard) myCard.classList.add("hidden");
+    return;
+  }
+
+  let myEntry = null;
+
+  tbody.innerHTML = entries
       .map(function (entry) {
         const isMe = String(entry.studentID) === String(currentStudentId);
         if (isMe) myEntry = entry;
@@ -1266,35 +1519,57 @@ async function loadLeaderboard() {
       })
       .join("");
 
-    // Show the current student's personal card at the top
-    if (myEntry && myCard) {
-      document.getElementById("myRankBadge").textContent = `#${myEntry.rank}`;
-      document.getElementById("myRankName").textContent = myEntry.name;
-      document.getElementById("myRankAvatarFallback").textContent = getInitials(
+  // Show the current student's personal card at the top
+  if (myEntry && myCard) {
+    document.getElementById("myRankBadge").textContent = `#${myEntry.rank}`;
+    document.getElementById("myRankName").textContent = myEntry.name;
+    document.getElementById("myRankAvatarFallback").textContent = getInitials(
+      myEntry.name.split(" ")[0],
+      myEntry.name.split(" ").slice(1).join(" "),
+      myEntry.name,
+    );
+    setAvatarDisplay(
+      document.getElementById("myRankAvatar"),
+      document.getElementById("myRankAvatarFallback"),
+      myEntry.profilePictureUrl,
+      getInitials(
         myEntry.name.split(" ")[0],
         myEntry.name.split(" ").slice(1).join(" "),
         myEntry.name,
-      );
-      setAvatarDisplay(
-        document.getElementById("myRankAvatar"),
-        document.getElementById("myRankAvatarFallback"),
-        myEntry.profilePictureUrl,
-        getInitials(
-          myEntry.name.split(" ")[0],
-          myEntry.name.split(" ").slice(1).join(" "),
-          myEntry.name,
-        ),
-      );
-      document.getElementById("myRankDetail").textContent =
-        `Score: ${myEntry.total_score}%  •  Course: ${myEntry.recommended_course}  •  Time: ${myEntry.time_display}`;
-      myCard.classList.remove("hidden");
-    }
-  } catch (err) {
-    tbody.innerHTML =
-      '<tr><td colspan="5" class="lb-loading">Could not load leaderboard. Make sure course.py is running.</td></tr>';
-    updateLeaderboardStats([]);
-    console.error("Leaderboard error:", err);
+      ),
+    );
+    document.getElementById("myRankDetail").textContent =
+      `Score: ${myEntry.total_score}%  •  Course: ${myEntry.recommended_course}  •  Time: ${myEntry.time_display}`;
+    myCard.classList.remove("hidden");
+  } else if (myCard) {
+    myCard.classList.add("hidden");
   }
+}
+
+function filterLeaderboardRows() {
+  const query = (document.getElementById("leaderboardSearchInput")?.value || "")
+    .trim()
+    .toLowerCase();
+
+  if (!query) {
+    renderLeaderboardRows(leaderboardEntries);
+    return;
+  }
+
+  const filtered = leaderboardEntries.filter((entry) => {
+    return [
+      entry.name,
+      entry.strand,
+      entry.section,
+      entry.recommended_course,
+      entry.total_score,
+    ]
+      .join(" ")
+      .toLowerCase()
+      .includes(query);
+  });
+
+  renderLeaderboardRows(filtered);
 }
 
 function updateLeaderboardStats(entries) {

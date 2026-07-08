@@ -3378,6 +3378,202 @@ body {
     font-weight: 800;
 }
 
+.student-progress-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(180px, 280px);
+    gap: 18px;
+    align-items: center;
+    margin: 0 0 24px;
+    padding: 18px;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--white), var(--gray-50));
+    box-shadow: var(--shadow-sm);
+}
+
+.student-progress-copy span {
+    display: block;
+    color: var(--gray-500);
+    font-size: .78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.student-progress-copy strong {
+    display: block;
+    margin-top: 4px;
+    color: var(--gray-900);
+    font-size: 1.15rem;
+}
+
+.student-progress-copy p {
+    margin-top: 4px;
+    color: var(--gray-700);
+}
+
+.student-progress-meter {
+    height: 12px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--gray-200);
+}
+
+.student-progress-meter div {
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--primary-dark), #2f9e62);
+    transition: width var(--transition);
+}
+
+.result-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 16px 0 18px;
+}
+
+.btn-result-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid rgba(31, 111, 73, .24);
+    border-radius: 8px;
+    background: var(--white);
+    color: var(--primary-dark);
+    font-weight: 800;
+    transition: transform var(--transition), background var(--transition), color var(--transition), box-shadow var(--transition);
+}
+
+.btn-result-action:hover {
+    transform: translateY(-2px);
+    background: var(--primary);
+    color: #fff;
+    box-shadow: var(--shadow-sm);
+}
+
+.recommendation-breakdown-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin: 18px 0;
+}
+
+.recommendation-breakdown-box {
+    padding: 16px;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    background: var(--gray-50);
+}
+
+.recommendation-breakdown-box h5 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    color: var(--gray-900);
+}
+
+.breakdown-list,
+.comparison-list {
+    color: var(--gray-700);
+}
+
+.breakdown-row {
+    display: grid;
+    grid-template-columns: minmax(130px, 1fr) minmax(90px, 140px) 44px;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 0;
+    border-top: 1px solid var(--gray-200);
+}
+
+.breakdown-row:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.breakdown-row strong,
+.comparison-card strong {
+    display: block;
+    color: var(--gray-900);
+}
+
+.breakdown-row span,
+.comparison-card span {
+    color: var(--gray-500);
+    font-size: .8rem;
+    font-weight: 700;
+}
+
+.breakdown-meter {
+    height: 8px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--gray-200);
+}
+
+.breakdown-meter div {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--primary), #2f9e62);
+}
+
+.comparison-list {
+    display: grid;
+    gap: 10px;
+}
+
+.comparison-card {
+    padding: 12px;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    background: var(--white);
+}
+
+.comparison-card.best {
+    border-color: rgba(31, 111, 73, .28);
+    background: var(--primary-light);
+}
+
+.comparison-card b {
+    display: inline-block;
+    margin-top: 8px;
+    color: var(--primary-dark);
+}
+
+.leaderboard-search-row {
+    position: relative;
+    margin: 18px 0;
+}
+
+.leaderboard-search-row i {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray-500);
+}
+
+.leaderboard-search-row input {
+    width: 100%;
+    min-height: 48px;
+    padding: 0 16px 0 44px;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    background: var(--white);
+    color: var(--gray-900);
+    box-shadow: var(--shadow-sm);
+}
+
+.leaderboard-search-row input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(31, 111, 73, .14);
+}
+
 body.dark-mode .assessment-overview-card,
 body.dark-mode .leaderboard-stat-card {
     background: linear-gradient(135deg, #17231c, #1d3024);
@@ -3458,9 +3654,56 @@ body.dark-mode .app-footer-inner span:first-child {
     color: #f5faf7;
 }
 
+body.dark-mode .student-progress-card,
+body.dark-mode .recommendation-breakdown-box,
+body.dark-mode .comparison-card,
+body.dark-mode .leaderboard-search-row input {
+    background: #17231c;
+    border-color: #26372d;
+}
+
+body.dark-mode .student-progress-copy strong,
+body.dark-mode .recommendation-breakdown-box h5,
+body.dark-mode .breakdown-row strong,
+body.dark-mode .comparison-card strong {
+    color: #f5faf7;
+}
+
+body.dark-mode .student-progress-copy p,
+body.dark-mode .breakdown-list,
+body.dark-mode .comparison-list {
+    color: #d7e2dc;
+}
+
+body.dark-mode .btn-result-action {
+    background: #17231c;
+    border-color: #334a3d;
+    color: #8ee0ad;
+}
+
+body.dark-mode .btn-result-action:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+body.dark-mode .comparison-card.best {
+    background: rgba(142, 224, 173, .12);
+    border-color: rgba(142, 224, 173, .24);
+}
+
+body.dark-mode .comparison-card b {
+    color: #8ee0ad;
+}
+
+body.dark-mode .leaderboard-search-row input {
+    color: #f5faf7;
+}
+
 @media (max-width: 768px) {
     .assessment-overview-grid,
-    .leaderboard-stats-grid {
+    .leaderboard-stats-grid,
+    .student-progress-card,
+    .recommendation-breakdown-grid {
         grid-template-columns: 1fr;
     }
 

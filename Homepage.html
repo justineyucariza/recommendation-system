@@ -292,6 +292,18 @@
 
                         </div>
 
+                        <div class="student-progress-card">
+                            <div class="student-progress-copy">
+                                <span>Profile Completion</span>
+                                <strong id="profileCompletionText">Checking profile...</strong>
+                                <p id="profileCompletionHint">Complete your profile and assessment to get better recommendations.</p>
+                            </div>
+
+                            <div class="student-progress-meter" aria-hidden="true">
+                                <div id="profileCompletionFill"></div>
+                            </div>
+                        </div>
+
                         
 
                         <div class="cards-grid" id="courses-main-grid">
@@ -1158,6 +1170,40 @@
             </span>
         </div>
 
+        <div class="result-action-row">
+            <button type="button" class="btn-result-action" id="downloadResultBtn">
+                <i class="bx bx-download" aria-hidden="true"></i>
+                <span>Download PDF</span>
+            </button>
+
+            <button type="button" class="btn-result-action" id="emailResultBtn">
+                <i class="bx bx-envelope" aria-hidden="true"></i>
+                <span>Email Result</span>
+            </button>
+        </div>
+
+        <div class="recommendation-breakdown-grid">
+            <section class="recommendation-breakdown-box">
+                <h5>
+                    <i class="bx bx-bar-chart-alt-2" aria-hidden="true"></i>
+                    Match Breakdown
+                </h5>
+                <div id="recommendationBreakdownList" class="breakdown-list">
+                    Complete the assessment to see your match breakdown.
+                </div>
+            </section>
+
+            <section class="recommendation-breakdown-box">
+                <h5>
+                    <i class="bx bx-git-compare" aria-hidden="true"></i>
+                    Course Comparison
+                </h5>
+                <div id="courseComparisonList" class="comparison-list">
+                    Your top course and alternative will appear here.
+                </div>
+            </section>
+        </div>
+
         <div class="ai-next-steps">
 
             <h5>
@@ -1238,6 +1284,15 @@
                     <strong id="leaderboardFastestTime">--</strong>
                 </div>
             </div>
+        </div>
+
+        <div class="leaderboard-search-row">
+            <i class="bx bx-search" aria-hidden="true"></i>
+            <input
+                id="leaderboardSearchInput"
+                type="search"
+                placeholder="Search leaderboard by name, strand, section, or course..."
+                autocomplete="off">
         </div>
 
         <!-- Highlight card for the current student's best rank -->
@@ -1332,6 +1387,53 @@
                 class="btn-modal btn-modal-confirm">
 
                 Log Out
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div id="retakeConfirmModal" class="modal-overlay hidden">
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+
+            <i class="bx bx-refresh" aria-hidden="true"></i>
+            <span>Retake Assessment?</span>
+
+        </div>
+
+        <div class="modal-body">
+
+            <h3>Start a new assessment attempt?</h3>
+
+            <p class="modal-description">
+                Your previous saved results will stay in your history. This will clear the current answers on screen.
+            </p>
+
+        </div>
+
+        <div class="modal-footer">
+
+            <button
+                type="button"
+                id="cancelRetakeBtn"
+                class="btn-modal btn-modal-cancel">
+
+                Cancel
+
+            </button>
+
+            <button
+                type="button"
+                id="confirmRetakeBtn"
+                class="btn-modal btn-modal-confirm">
+
+                Retake
 
             </button>
 

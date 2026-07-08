@@ -275,6 +275,31 @@ def send_registration_email(to_email, name):
     )
 
 
+def send_assessment_result_email(to_email, name, result):
+    recommended = result.get("recommended_course_title", "Your recommended course")
+    alternative = result.get("alternative_course_title", "Your alternative course")
+    alignment = result.get("alignment_score", "")
+    pathways = result.get("pathways") or []
+    pathway_text = "\n".join(f"- {pathway}" for pathway in pathways) or "- No pathways listed"
+
+    send_email(
+        to_email,
+        "Your AcadSync Assessment Result",
+        (
+            f"Hello {name or 'student'},\n\n"
+            "Here is your AcadSync assessment result:\n\n"
+            f"Top recommendation: {recommended}\n"
+            f"Alternative recommendation: {alternative}\n"
+            f"Course match: {alignment}\n\n"
+            "Suggested career pathways:\n"
+            f"{pathway_text}\n\n"
+            "This recommendation is based on your interests, skills, grades, "
+            "preferences, and assessment answers.\n\n"
+            "AcadSync"
+        )
+    )
+
+
 def parse_valid_grade(value):
     try:
         grade = int(str(value).strip())
@@ -1009,6 +1034,48 @@ def upload_profile_picture():
         conn.close()
 
 
+@app.route('/api/email-assessment-result', methods=['POST'])
+def email_assessment_result():
+    data = request.get_json() or {}
+    student_id = data.get("student_id")
+    result = data.get("result") or {}
+
+    if not student_id:
+        return jsonify({"success": False, "message": "Student ID is required."}), 400
+
+    if not result.get("recommended_course_title"):
+        return jsonify({"success": False, "message": "Assessment result is required."}), 400
+
+    conn = get_db()
+    if not conn:
+        return jsonify({"success": False, "message": "Database connection failed."}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT first_name, last_name, email
+            FROM users
+            WHERE studentID = %s
+        """, (student_id,))
+        user = cursor.fetchone()
+    finally:
+        conn.close()
+
+    if not user:
+        return jsonify({"success": False, "message": "Student not found."}), 404
+
+    try:
+        send_assessment_result_email(
+            user["email"],
+            format_full_name(user["first_name"], user["last_name"]),
+            result
+        )
+        return jsonify({"success": True, "message": "Assessment result sent to your email."})
+    except Exception as e:
+        print(f"[EMAIL RESULT ERROR] {e}")
+        return jsonify({"success": False, "message": public_email_error_message(e)}), 500
+
+
 # ==================================================================
 #  RECOMMENDATION ENGINE
 # ==================================================================
@@ -1252,7 +1319,26 @@ def recommend():
         "alternative_course_title": course_metadata[runner_up]["title"],
         "alignment_score":          f"{alignment_score}%",
         "pathways":                 course_metadata[winner]["pathways"],
-        "scores":                   final_scores
+        "scores":                   final_scores,
+        "recommended_course_key":   winner,
+        "alternative_course_key":   runner_up,
+        "category_scores":          scores,
+        "weights": {
+            "interest": 25,
+            "skill": 20,
+            "career": 25,
+            "academic": 15,
+            "preference": 5,
+            "quiz": 10
+        },
+        "course_matches": [
+            {
+                "key": course_key,
+                "title": course_metadata[course_key]["title"],
+                "score": score
+            }
+            for course_key, score in sorted_courses
+        ]
     })
 
 
