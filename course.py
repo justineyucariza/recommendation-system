@@ -1,9 +1,12 @@
 import os
 import re
 import ssl
+import json
 import smtplib
 import secrets
 import hashlib
+import urllib.error
+import urllib.request
 from datetime import datetime, timedelta
 from email.message import EmailMessage
 from flask import Flask, request, jsonify, send_from_directory, abort
@@ -42,9 +45,14 @@ UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads", "profile-pictures")
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 EMAIL_PATTERN = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
 RESET_CODE_MINUTES = int(os.environ.get("RESET_CODE_MINUTES", "10"))
-# SMTP credentials must be provided as environment variables in Railway/local env.
-# Required: SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD.
+# Prefer Resend over SMTP on Railway because outbound SMTP can be blocked.
+# Resend: RESEND_API_KEY, RESEND_FROM_EMAIL.
+# SMTP fallback: SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD.
 # Optional: SMTP_FROM_EMAIL, SMTP_USE_TLS, RESET_CODE_MINUTES.
+RESEND_CONFIG = {
+    "api_key": os.environ.get("RESEND_API_KEY", ""),
+    "from_email": os.environ.get("RESEND_FROM_EMAIL", ""),
+}
 SMTP_CONFIG = {
     "host": os.environ.get("SMTP_HOST", ""),
     "port": int(os.environ.get("SMTP_PORT", "587")),
@@ -152,6 +160,9 @@ def code_hash(code):
 
 
 def is_email_configured():
+    if RESEND_CONFIG["api_key"] and RESEND_CONFIG["from_email"]:
+        return True
+
     return all([
         SMTP_CONFIG["host"],
         SMTP_CONFIG["username"],
@@ -160,10 +171,7 @@ def is_email_configured():
     ])
 
 
-def send_email(to_email, subject, body):
-    if not is_email_configured():
-        raise RuntimeError("Email service is not configured.")
-
+def send_email_with_smtp(to_email, subject, body):
     message = EmailMessage()
     message["From"] = SMTP_CONFIG["from_email"]
     message["To"] = to_email
@@ -180,6 +188,44 @@ def send_email(to_email, subject, body):
         with smtplib.SMTP_SSL(SMTP_CONFIG["host"], SMTP_CONFIG["port"], timeout=20) as server:
             server.login(SMTP_CONFIG["username"], SMTP_CONFIG["password"])
             server.send_message(message)
+
+
+def send_email_with_resend(to_email, subject, body):
+    payload = json.dumps({
+        "from": RESEND_CONFIG["from_email"],
+        "to": [to_email],
+        "subject": subject,
+        "text": body,
+    }).encode("utf-8")
+
+    request = urllib.request.Request(
+        "https://api.resend.com/emails",
+        data=payload,
+        method="POST",
+        headers={
+            "Authorization": f"Bearer {RESEND_CONFIG['api_key']}",
+            "Content-Type": "application/json",
+        },
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            if response.status >= 300:
+                raise RuntimeError(f"Resend returned HTTP {response.status}.")
+    except urllib.error.HTTPError as e:
+        details = e.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Resend email error: {details}") from e
+
+
+def send_email(to_email, subject, body):
+    if RESEND_CONFIG["api_key"] and RESEND_CONFIG["from_email"]:
+        send_email_with_resend(to_email, subject, body)
+        return
+
+    if not is_email_configured():
+        raise RuntimeError("Email service is not configured.")
+
+    send_email_with_smtp(to_email, subject, body)
 
 
 def send_reset_code_email(to_email, code):
