@@ -156,6 +156,8 @@ if (footerYearEl) {
 
 let latestRecommendationResult = null;
 let leaderboardEntries = [];
+let assessmentDraftRestoring = false;
+let quizTimerInterval = null;
 
 async function refreshSessionProfile() {
   const studentID = sessionStorage.getItem("studentID");
@@ -440,6 +442,98 @@ function navigateStep(step) {
   document.getElementById(`step-panel-${step}`).classList.remove("hidden");
 
   updateAssessmentProgress();
+  saveAssessmentDraft();
+}
+
+function assessmentDraftKey() {
+  return `acadsync-assessment-draft-${sessionStorage.getItem("studentID") || "guest"}`;
+}
+
+function collectAssessmentDraft() {
+  return {
+    savedAt: new Date().toISOString(),
+    currentStep: app.currentStep,
+    strand: document.getElementById("student-strand")?.value || "",
+    interests: document.getElementById("student-interests")?.value || "",
+    skills: document.getElementById("student-skills")?.value || "",
+    career: document.getElementById("student-career")?.value || "",
+    grades: {
+      math: document.getElementById("grade-math")?.value || "",
+      english: document.getElementById("grade-english")?.value || "",
+      science: document.getElementById("grade-science")?.value || "",
+    },
+    answers: quizState.answers,
+  };
+}
+
+function saveAssessmentDraft() {
+  if (assessmentDraftRestoring) return;
+
+  try {
+    localStorage.setItem(assessmentDraftKey(), JSON.stringify(collectAssessmentDraft()));
+    updateDraftStatus("Draft saved on this device.");
+    toggleResumeButton();
+  } catch (err) {
+    updateDraftStatus("Draft could not be saved on this device.");
+  }
+}
+
+function getAssessmentDraft() {
+  try {
+    return JSON.parse(localStorage.getItem(assessmentDraftKey()) || "null");
+  } catch {
+    return null;
+  }
+}
+
+function clearAssessmentDraft() {
+  localStorage.removeItem(assessmentDraftKey());
+  updateDraftStatus("Draft cleared.");
+  toggleResumeButton();
+}
+
+function updateDraftStatus(message) {
+  const status = document.getElementById("assessmentDraftStatus");
+  if (status) status.textContent = message;
+}
+
+function toggleResumeButton() {
+  const button = document.getElementById("resumeAssessmentBtn");
+  if (button) button.classList.toggle("hidden", !getAssessmentDraft());
+}
+
+function restoreAssessmentDraft() {
+  const draft = getAssessmentDraft();
+  if (!draft) {
+    showNotification("No saved assessment found on this device.", "warning");
+    return;
+  }
+
+  assessmentDraftRestoring = true;
+  document.getElementById("student-strand").value = draft.strand || "HUMSS";
+  document.getElementById("student-interests").value = draft.interests || "";
+  document.getElementById("student-skills").value = draft.skills || "";
+  document.getElementById("student-career").value = draft.career || "";
+  document.getElementById("grade-math").value = draft.grades?.math || 85;
+  document.getElementById("grade-english").value = draft.grades?.english || 85;
+  document.getElementById("grade-science").value = draft.grades?.science || 85;
+  quizState.answers = Array.isArray(draft.answers)
+    ? draft.answers.slice(0, assessmentQuestions.length)
+    : new Array(assessmentQuestions.length).fill(null);
+  while (quizState.answers.length < assessmentQuestions.length) {
+    quizState.answers.push(null);
+  }
+  updateStrandGuidance();
+  assessmentDraftRestoring = false;
+
+  const step = Math.min(Math.max(Number(draft.currentStep) || 1, 1), 5);
+  if (step === 5) {
+    buildAndDisplayQuizPanel(false);
+  } else {
+    navigateStep(step);
+  }
+  updateDraftStatus(`Resumed saved draft from ${formatDateTime(draft.savedAt)}.`);
+  showNotification("Saved assessment restored.", "success");
 }
 
 function resetAssessmentFlow() {
@@ -447,6 +541,7 @@ function resetAssessmentFlow() {
 }
 
 function performAssessmentReset() {
+  assessmentDraftRestoring = true;
   navigateStep(1);
 
   document.getElementById("student-strand").selectedIndex = 0;
@@ -471,10 +566,46 @@ function performAssessmentReset() {
   document.getElementById("ai-res-pathways").innerHTML = "";
   latestRecommendationResult = null;
   renderRecommendationExtras(null);
+  quizState.answers = new Array(assessmentQuestions.length).fill(null);
+  stopQuizTimer(true);
+  assessmentDraftRestoring = false;
+  clearAssessmentDraft();
+  updateStrandGuidance();
 }
 
 // Quiz timer — tracks seconds from when the quiz panel opens to submission
 let _quizStartTime = null;
+
+function formatElapsedTime(totalSeconds) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
+}
+
+function updateQuizTimerDisplay() {
+  const timerEl = document.getElementById("quizTimer");
+  if (!timerEl) return;
+  const elapsed = _quizStartTime
+    ? Math.max(0, Math.round((Date.now() - _quizStartTime) / 1000))
+    : 0;
+  timerEl.textContent = `Time: ${formatElapsedTime(elapsed)}`;
+}
+
+function startQuizTimer() {
+  if (!_quizStartTime) _quizStartTime = Date.now();
+  clearInterval(quizTimerInterval);
+  updateQuizTimerDisplay();
+  quizTimerInterval = setInterval(updateQuizTimerDisplay, 1000);
+}
+
+function stopQuizTimer(resetDisplay = false) {
+  clearInterval(quizTimerInterval);
+  quizTimerInterval = null;
+  if (resetDisplay) {
+    _quizStartTime = null;
+    updateQuizTimerDisplay();
+  }
+}
 
 function normalizeGradeValue(value) {
   const cleaned = String(value || "").replace(/\D/g, "").slice(0, 2);
@@ -507,15 +638,38 @@ function validateAcademicGrades() {
 ["grade-math", "grade-english", "grade-science"].forEach((id) => {
   document.getElementById(id)?.addEventListener("input", function () {
     this.value = String(this.value || "").replace(/\D/g, "").slice(0, 2);
+    saveAssessmentDraft();
   });
 });
 
-function buildAndDisplayQuizPanel() {
+[
+  "student-interests",
+  "student-skills",
+  "student-career",
+].forEach((id) => {
+  document.getElementById(id)?.addEventListener("input", saveAssessmentDraft);
+});
+
+document.getElementById("student-strand")?.addEventListener("change", () => {
+  updateStrandGuidance();
+  saveAssessmentDraft();
+});
+
+document.getElementById("resumeAssessmentBtn")?.addEventListener("click", restoreAssessmentDraft);
+
+toggleResumeButton();
+updateStrandGuidance();
+
+function buildAndDisplayQuizPanel(resetTimer = true) {
   navigateStep(5);
 
-  _quizStartTime = Date.now(); // start the clock
+  if (resetTimer) {
+    _quizStartTime = Date.now();
+  }
+  startQuizTimer();
 
   renderAllQuestions();
+  saveAssessmentDraft();
 }
 
 function validateQuiz() {
@@ -604,6 +758,7 @@ async function submitFullAssessmentToAI() {
   const timeTakenSeconds = _quizStartTime
     ? Math.round((Date.now() - _quizStartTime) / 1000)
     : 0;
+  stopQuizTimer();
 
   // Read student_id from session (set by login)
   const studentId = sessionStorage.getItem("studentID") || null;
@@ -616,7 +771,7 @@ async function submitFullAssessmentToAI() {
         interests: interests,
         skills: skills,
         career_preference: career,
-        preferences: "",
+        preferences: document.getElementById("student-strand")?.value || "",
         grades: grades,
         quiz_scores: quizScores,
         student_id: studentId,
@@ -652,6 +807,7 @@ async function submitFullAssessmentToAI() {
 function displayRecommendation(result) {
   // FIX: uses real API result instead of hardcoded values
   latestRecommendationResult = result;
+  clearAssessmentDraft();
   document.getElementById("ai-res-badge").textContent = result.alignment_score;
   document.getElementById("ai-res-title").textContent =
     result.recommended_course_title;
@@ -859,6 +1015,24 @@ function closeCourseDetails() {
   document.getElementById("courses-main-grid").classList.remove("hidden");
 }
 
+const strandGuidance = {
+  HUMSS: "Recommended direction: Education, Criminology, communication-heavy careers, and social science pathways.",
+  STEM: "Recommended direction: Information Technology, Education, health/science-related fields, and analytical careers.",
+  ABM: "Recommended direction: Marketing Management, entrepreneurship, sales, and business leadership.",
+  ICT: "Recommended direction: Information Technology, programming, systems support, networking, and digital careers.",
+  TECHPRO_TOURISM: "Recommended direction: Tourism Management, hospitality, events, travel services, and guest relations.",
+  TECHPRO_CULINARY: "Recommended direction: Tourism or hospitality-related programs, kitchen operations, service, and entrepreneurship.",
+};
+
+function updateStrandGuidance() {
+  const strand = document.getElementById("student-strand")?.value || "";
+  const guidance = document.getElementById("strandGuidance");
+  if (guidance) {
+    guidance.textContent =
+      strandGuidance[strand] || "Select the Senior High School track closest to your current strand.";
+  }
+}
+
 function handleSearchAndFilter() {
   const query =
     document
@@ -1006,6 +1180,7 @@ document.addEventListener("change", function (e) {
   quizState.answers[index] = value;
 
   updateAnsweredCount();
+  saveAssessmentDraft();
 });
 
 // ---------- Header buttons & modals ----------

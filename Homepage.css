@@ -3426,6 +3426,78 @@ body {
     transition: width var(--transition);
 }
 
+.strand-guidance {
+    margin-top: 8px;
+    color: var(--gray-500);
+    font-size: .88rem;
+    line-height: 1.5;
+}
+
+.assessment-draft-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: -6px 0 18px;
+    color: var(--gray-500);
+    font-size: .88rem;
+}
+
+.btn-inline-soft {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 0 12px;
+    border: 1px solid rgba(31, 111, 73, .24);
+    border-radius: 8px;
+    background: var(--white);
+    color: var(--primary-dark);
+    font-weight: 800;
+}
+
+.btn-inline-soft:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+#quizTimer {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-weight: 800;
+}
+
+.course-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.course-detail-grid div {
+    padding: 14px;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    background: var(--gray-50);
+}
+
+.course-detail-grid strong {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--gray-900);
+}
+
+.course-detail-grid span {
+    color: var(--gray-700);
+    line-height: 1.45;
+}
+
 .result-action-row {
     display: flex;
     flex-wrap: wrap;
@@ -3671,7 +3743,10 @@ body.dark-mode .comparison-card strong {
 
 body.dark-mode .student-progress-copy p,
 body.dark-mode .breakdown-list,
-body.dark-mode .comparison-list {
+body.dark-mode .comparison-list,
+body.dark-mode .strand-guidance,
+body.dark-mode .assessment-draft-row,
+body.dark-mode .course-detail-grid span {
     color: #d7e2dc;
 }
 
@@ -3699,17 +3774,42 @@ body.dark-mode .leaderboard-search-row input {
     color: #f5faf7;
 }
 
+body.dark-mode .btn-inline-soft,
+body.dark-mode .course-detail-grid div {
+    background: #17231c;
+    border-color: #26372d;
+}
+
+body.dark-mode .btn-inline-soft {
+    color: #8ee0ad;
+}
+
+body.dark-mode #quizTimer {
+    background: rgba(142, 224, 173, .12);
+    color: #8ee0ad;
+}
+
+body.dark-mode .course-detail-grid strong {
+    color: #f5faf7;
+}
+
 @media (max-width: 768px) {
     .assessment-overview-grid,
     .leaderboard-stats-grid,
     .student-progress-card,
-    .recommendation-breakdown-grid {
+    .recommendation-breakdown-grid,
+    .course-detail-grid {
         grid-template-columns: 1fr;
     }
 
     .app-footer-inner {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .assessment-draft-row {
+        align-items: flex-start;
+        flex-direction: column;
     }
 }
 

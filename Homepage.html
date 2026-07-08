@@ -581,6 +581,11 @@
             and sustainable tourism practices.
 
         </p>
+        <div class="course-detail-grid">
+            <div><strong>Best-fit strand</strong><span>TechPro Tourism, Culinary, HUMSS</span></div>
+            <div><strong>Skills learned</strong><span>Guest relations, itinerary planning, events, service operations</span></div>
+            <div><strong>Career paths</strong><span>Flight attendant, tour guide, hotel staff, event planner</span></div>
+        </div>
 
     </div>
 
@@ -605,6 +610,11 @@
             and entrepreneurship.
 
         </p>
+        <div class="course-detail-grid">
+            <div><strong>Best-fit strand</strong><span>ABM, HUMSS</span></div>
+            <div><strong>Skills learned</strong><span>Branding, sales, market research, business communication</span></div>
+            <div><strong>Career paths</strong><span>Marketing officer, entrepreneur, sales executive, digital marketer</span></div>
+        </div>
 
     </div>
 
@@ -630,6 +640,11 @@
             and software engineering.
 
         </p>
+        <div class="course-detail-grid">
+            <div><strong>Best-fit strand</strong><span>ICT, STEM</span></div>
+            <div><strong>Skills learned</strong><span>Programming, systems support, web development, database basics</span></div>
+            <div><strong>Career paths</strong><span>Developer, IT support, network assistant, systems analyst</span></div>
+        </div>
 
     </div>
 
@@ -653,6 +668,11 @@
             and child development.
 
         </p>
+        <div class="course-detail-grid">
+            <div><strong>Best-fit strand</strong><span>HUMSS, STEM</span></div>
+            <div><strong>Skills learned</strong><span>Child development, classroom management, lesson planning</span></div>
+            <div><strong>Career paths</strong><span>Elementary teacher, tutor, learning support aide, curriculum assistant</span></div>
+        </div>
 
     </div>
 
@@ -675,6 +695,11 @@
             for secondary education.
 
         </p>
+        <div class="course-detail-grid">
+            <div><strong>Best-fit strand</strong><span>HUMSS, STEM</span></div>
+            <div><strong>Skills learned</strong><span>Subject teaching, public speaking, research, instructional design</span></div>
+            <div><strong>Career paths</strong><span>High school teacher, academic adviser, learning coordinator</span></div>
+        </div>
 
     </div>
 
@@ -699,6 +724,11 @@
             and law enforcement.
 
         </p>
+        <div class="course-detail-grid">
+            <div><strong>Best-fit strand</strong><span>HUMSS, STEM</span></div>
+            <div><strong>Skills learned</strong><span>Investigation, discipline, legal foundations, public safety</span></div>
+            <div><strong>Career paths</strong><span>Police officer, investigator, forensic assistant, security professional</span></div>
+        </div>
 
     </div>
 
@@ -756,6 +786,14 @@
 
     </div>
 
+    <div class="assessment-draft-row">
+        <span id="assessmentDraftStatus">Draft saves automatically on this device.</span>
+        <button type="button" id="resumeAssessmentBtn" class="btn-inline-soft hidden">
+            <i class="bx bx-history" aria-hidden="true"></i>
+            <span>Resume Saved Assessment</span>
+        </button>
+    </div>
+
     
 
     <div id="multi-step-form-container">
@@ -782,31 +820,35 @@
 
                 <select id="student-strand">
 
-                    <option value="ICT">
-                        ICT
+                    <option value="HUMSS">
+                        HUMSS - Arts, Social Sciences and Humanities
                     </option>
 
                     <option value="STEM">
-                        STEM
+                        STEM - Science, Technology, Engineering and Mathematics
                     </option>
 
                     <option value="ABM">
-                        ABM
+                        ABM - Business and Entrepreneurship
                     </option>
 
-                    <option value="HUMSS">
-                        HUMSS
+                    <option value="ICT">
+                        ICT - Information Communication Technology
                     </option>
 
-                    <option value="GAS">
-                        GAS
+                    <option value="TECHPRO_TOURISM">
+                        TechPro - Culinary, Hospitality and Tourism
                     </option>
 
-                    <option value="TVL">
-                        TVL
+                    <option value="TECHPRO_CULINARY">
+                        TechPro - Culinary Arts
                     </option>
 
                 </select>
+
+                <p class="strand-guidance" id="strandGuidance">
+                    Select the Senior High School track closest to your current strand.
+                </p>
 
             </div>
 
@@ -1057,6 +1099,10 @@
             </div>
 
             <div class="quiz-progress">
+
+                <span id="quizTimer">
+                    Time: 0m 00s
+                </span>
 
                 <span id="quizCounter">
 
