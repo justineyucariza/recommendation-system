@@ -159,6 +159,11 @@ let leaderboardEntries = [];
 let assessmentDraftRestoring = false;
 let quizTimerInterval = null;
 
+function normalizeStrandValue(value) {
+  const allowedStrands = ["HUMSS", "STEM", "ABM", "ICT", "TECHPRO_TOURISM"];
+  return allowedStrands.includes(value) ? value : "HUMSS";
+}
+
 async function refreshSessionProfile() {
   const studentID = sessionStorage.getItem("studentID");
   if (!studentID) return;
@@ -453,7 +458,7 @@ function collectAssessmentDraft() {
   return {
     savedAt: new Date().toISOString(),
     currentStep: app.currentStep,
-    strand: document.getElementById("student-strand")?.value || "",
+    strand: normalizeStrandValue(document.getElementById("student-strand")?.value || ""),
     interests: document.getElementById("student-interests")?.value || "",
     skills: document.getElementById("student-skills")?.value || "",
     career: document.getElementById("student-career")?.value || "",
@@ -510,7 +515,8 @@ function restoreAssessmentDraft() {
   }
 
   assessmentDraftRestoring = true;
-  document.getElementById("student-strand").value = draft.strand || "HUMSS";
+  document.getElementById("student-strand").value =
+    normalizeStrandValue(draft.strand) || "HUMSS";
   document.getElementById("student-interests").value = draft.interests || "";
   document.getElementById("student-skills").value = draft.skills || "";
   document.getElementById("student-career").value = draft.career || "";
@@ -658,7 +664,6 @@ document.getElementById("student-strand")?.addEventListener("change", () => {
 document.getElementById("resumeAssessmentBtn")?.addEventListener("click", restoreAssessmentDraft);
 
 toggleResumeButton();
-updateStrandGuidance();
 
 function buildAndDisplayQuizPanel(resetTimer = true) {
   navigateStep(5);
@@ -1021,7 +1026,6 @@ const strandGuidance = {
   ABM: "Recommended direction: Marketing Management, entrepreneurship, sales, and business leadership.",
   ICT: "Recommended direction: Information Technology, programming, systems support, networking, and digital careers.",
   TECHPRO_TOURISM: "Recommended direction: Tourism Management, hospitality, events, travel services, and guest relations.",
-  TECHPRO_CULINARY: "Recommended direction: Tourism or hospitality-related programs, kitchen operations, service, and entrepreneurship.",
 };
 
 function updateStrandGuidance() {
@@ -1032,6 +1036,8 @@ function updateStrandGuidance() {
       strandGuidance[strand] || "Select the Senior High School track closest to your current strand.";
   }
 }
+
+updateStrandGuidance();
 
 function handleSearchAndFilter() {
   const query =

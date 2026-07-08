@@ -1161,8 +1161,7 @@ def recommend():
         "stem": {"it": 70, "bsed": 50, "beed": 35, "crim": 30},
         "abm": {"marketing": 100},
         "humss": {"beed": 80, "bsed": 80, "crim": 65, "marketing": 35},
-        "techpro_tourism": {"tourism": 100, "marketing": 35},
-        "techpro_culinary": {"tourism": 85, "marketing": 45}
+        "techpro_tourism": {"tourism": 100, "marketing": 35}
     }
 
     for keyword, mapping in interest_weights.items():
