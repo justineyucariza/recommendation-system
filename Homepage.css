@@ -2757,6 +2757,41 @@ body::before {
     box-shadow: 0 16px 34px rgba(31, 111, 73, .22);
 }
 
+.ai-match-score-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.confidence-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 78px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .18);
+    color: #fff;
+    font-size: .62rem;
+    font-weight: 800;
+    line-height: 1.1;
+    text-align: center;
+}
+
+.confidence-label.strong {
+    background: rgba(220, 252, 231, .24);
+}
+
+.confidence-label.good {
+    background: rgba(254, 249, 195, .24);
+}
+
+.confidence-label.low {
+    background: rgba(255, 237, 213, .24);
+}
+
 .ai-output-card h2 {
     color: var(--gray-900);
     font-size: clamp(1.35rem, 2.4vw, 2rem);
@@ -3378,6 +3413,49 @@ body {
     font-weight: 800;
 }
 
+.footer-link-button {
+    border: 0;
+    background: transparent;
+    color: var(--primary-dark);
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.footer-link-button:hover,
+.footer-link-button:focus-visible {
+    color: var(--primary);
+    text-decoration: underline;
+    outline: none;
+}
+
+.privacy-modal-box {
+    max-width: 680px;
+}
+
+.privacy-list {
+    display: grid;
+    gap: 12px;
+    margin: 18px 0;
+}
+
+.privacy-list div {
+    padding: 14px;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    background: var(--gray-50);
+}
+
+.privacy-list strong {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--gray-900);
+}
+
+.privacy-list span {
+    color: var(--gray-700);
+    line-height: 1.5;
+}
+
 .student-progress-card {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(180px, 280px);
@@ -3726,6 +3804,10 @@ body.dark-mode .app-footer-inner span:first-child {
     color: #f5faf7;
 }
 
+body.dark-mode .footer-link-button {
+    color: #8ee0ad;
+}
+
 body.dark-mode .student-progress-card,
 body.dark-mode .recommendation-breakdown-box,
 body.dark-mode .comparison-card,
@@ -3772,6 +3854,19 @@ body.dark-mode .comparison-card b {
 
 body.dark-mode .leaderboard-search-row input {
     color: #f5faf7;
+}
+
+body.dark-mode .privacy-list div {
+    background: #17231c;
+    border-color: #26372d;
+}
+
+body.dark-mode .privacy-list strong {
+    color: #f5faf7;
+}
+
+body.dark-mode .privacy-list span {
+    color: #d7e2dc;
 }
 
 body.dark-mode .btn-inline-soft,

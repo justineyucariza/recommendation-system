@@ -567,6 +567,7 @@ function performAssessmentReset() {
   document.getElementById("quizQuestionContainer").innerHTML = "";
 
   document.getElementById("ai-res-badge").textContent = "0%";
+  updateConfidenceLabel(0);
   document.getElementById("ai-res-title").textContent = "Assessment Reset";
   document.getElementById("ai-res-reasoning").textContent = "";
   document.getElementById("ai-res-pathways").innerHTML = "";
@@ -792,6 +793,7 @@ async function submitFullAssessmentToAI() {
 
     if (result.error) {
       badge.textContent = "0%";
+      updateConfidenceLabel(0);
       title.textContent = result.recommended_course_title;
       reason.textContent = result.error;
       return;
@@ -802,6 +804,7 @@ async function submitFullAssessmentToAI() {
     loadQuizHistory();
   } catch (err) {
     badge.textContent = "Error";
+    updateConfidenceLabel(0);
     title.textContent = "Could not connect to the recommendation server.";
     reason.textContent =
       "Please make sure the Flask server (course.py) is running on port 5000 and try again.";
@@ -814,6 +817,7 @@ function displayRecommendation(result) {
   latestRecommendationResult = result;
   clearAssessmentDraft();
   document.getElementById("ai-res-badge").textContent = result.alignment_score;
+  updateConfidenceLabel(result.alignment_score);
   document.getElementById("ai-res-title").textContent =
     result.recommended_course_title;
 
@@ -834,6 +838,26 @@ function displayRecommendation(result) {
 
   document.getElementById("ai-res-pathways").innerHTML = pathwayList;
   renderRecommendationExtras(result);
+}
+
+function updateConfidenceLabel(alignmentScore) {
+  const label = document.getElementById("ai-confidence-label");
+  if (!label) return;
+
+  const score = Number(String(alignmentScore || "").replace("%", ""));
+  let text = "Needs More Info";
+  let tone = "low";
+
+  if (score >= 80) {
+    text = "Strong Match";
+    tone = "strong";
+  } else if (score >= 60) {
+    text = "Good Match";
+    tone = "good";
+  }
+
+  label.textContent = text;
+  label.className = `confidence-label ${tone}`;
 }
 
 function renderRecommendationExtras(result) {
@@ -1560,6 +1584,14 @@ document.getElementById("confirmRetakeBtn")?.addEventListener("click", () => {
   closeModal("retakeConfirmModal");
   performAssessmentReset();
 });
+
+document
+  .getElementById("privacyNoticeBtn")
+  ?.addEventListener("click", () => openModal("privacyNoticeModal"));
+
+document
+  .getElementById("closePrivacyNoticeBtn")
+  ?.addEventListener("click", () => closeModal("privacyNoticeModal"));
 
 // ---------- Quiz panel navigation buttons ----------
 // Now that all 50 questions show at once:
