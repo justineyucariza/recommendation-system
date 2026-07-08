@@ -2295,7 +2295,7 @@ body::before {
     position: absolute;
     left: clamp(20px, 4vw, 58px);
     top: 14px;
-    color: var(--primary-dark);
+    color: var(--primary);
     font-size: 1.05rem;
     font-weight: 800;
 }
@@ -2958,6 +2958,20 @@ body.dark-mode .quiz-history-item {
 
 body.dark-mode .welcome-banner {
     background: linear-gradient(135deg, #17231c, #1d3024);
+}
+
+body.dark-mode .main-header::before {
+    color: #8ee0ad;
+}
+
+body.dark-mode .semester-year {
+    color: #f5faf7;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, .35);
+}
+
+body.dark-mode .semester-term,
+body.dark-mode .quote {
+    color: #d7e2dc;
 }
 
 body.dark-mode .nav-item.active {
