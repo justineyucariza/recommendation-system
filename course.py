@@ -7,6 +7,7 @@ import secrets
 import hashlib
 import urllib.error
 import urllib.request
+import base64
 from datetime import datetime, timedelta
 from email.message import EmailMessage
 from flask import Flask, request, jsonify, send_from_directory, abort
@@ -43,6 +44,7 @@ DB_CONFIG = {
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads", "profile-pictures")
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+MAX_PROFILE_PICTURE_BYTES = 1 * 1024 * 1024
 EMAIL_PATTERN = re.compile(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$")
 RESET_CODE_MINUTES = int(os.environ.get("RESET_CODE_MINUTES", "10"))
 # Prefer Resend over SMTP on Railway because outbound SMTP can be blocked.
@@ -108,6 +110,8 @@ def format_full_name(first_name, last_name):
 def profile_picture_path(filename):
     if not filename:
         return ""
+    if str(filename).startswith("data:"):
+        return filename
     return f"/uploads/profile-pictures/{filename}"
 
 
@@ -311,7 +315,7 @@ def run_startup_migrations():
                 password   VARCHAR(255) NOT NULL,
                 strand_id  INT,
                 section    VARCHAR(100) DEFAULT NULL,
-                profile_picture VARCHAR(255) DEFAULT NULL,
+                profile_picture LONGTEXT DEFAULT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (strand_id) REFERENCES strands(strand_id)
             )
@@ -329,6 +333,11 @@ def run_startup_migrations():
         except Error as e:
             if "Duplicate column" not in str(e):
                 print(f"[MIGRATION] profile_picture column: {e}")
+
+        try:
+            cur.execute("ALTER TABLE users MODIFY COLUMN profile_picture LONGTEXT DEFAULT NULL")
+        except Error as e:
+            print(f"[MIGRATION] profile_picture type: {e}")
 
         # quiz_results — stores one row per quiz attempt
         cur.execute("""
@@ -946,6 +955,13 @@ def upload_profile_picture():
     if not is_allowed_image(picture.filename):
         return jsonify({"success": False, "message": "Only PNG, JPG, JPEG, GIF, and WEBP images are allowed."}), 400
 
+    picture_bytes = picture.read()
+    if len(picture_bytes) > MAX_PROFILE_PICTURE_BYTES:
+        return jsonify({"success": False, "message": "Profile picture must be 1 MB or smaller."}), 400
+
+    if not picture_bytes:
+        return jsonify({"success": False, "message": "The uploaded image is empty."}), 400
+
     conn = get_db()
     if not conn:
         return jsonify({"success": False, "message": "Database connection failed."}), 500
@@ -958,13 +974,16 @@ def upload_profile_picture():
             return jsonify({"success": False, "message": "Student not found."}), 404
 
         original_name = secure_filename(picture.filename)
-        file_root, file_ext = os.path.splitext(original_name)
-        file_name = f"student_{student_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}{file_ext.lower()}"
-        save_path = os.path.join(UPLOAD_FOLDER, file_name)
-        picture.save(save_path)
+        _, file_ext = os.path.splitext(original_name)
+        mime_extension = file_ext.lower().lstrip(".") or "jpeg"
+        if mime_extension == "jpg":
+            mime_extension = "jpeg"
+        mime_type = f"image/{mime_extension}"
+        encoded_image = base64.b64encode(picture_bytes).decode("ascii")
+        profile_picture_value = f"data:{mime_type};base64,{encoded_image}"
 
         old_file = user.get("profile_picture")
-        if old_file and old_file != file_name:
+        if old_file and not str(old_file).startswith("data:"):
             old_path = os.path.join(UPLOAD_FOLDER, old_file)
             if os.path.exists(old_path):
                 try:
@@ -972,13 +991,16 @@ def upload_profile_picture():
                 except OSError:
                     pass
 
-        cursor.execute("UPDATE users SET profile_picture = %s WHERE studentID = %s", (file_name, student_id))
+        cursor.execute(
+            "UPDATE users SET profile_picture = %s WHERE studentID = %s",
+            (profile_picture_value, student_id)
+        )
         conn.commit()
 
         return jsonify({
             "success": True,
             "message": "Profile picture updated.",
-            "profilePictureUrl": profile_picture_path(file_name)
+            "profilePictureUrl": profile_picture_path(profile_picture_value)
         })
     except Error as e:
         print(f"[DB PROFILE ERROR] {e}")

@@ -19,6 +19,8 @@ const API_BASE = (() => {
 function resolveApiUrl(path) {
   if (!path) return "";
 
+  if (/^data:/i.test(path)) return path;
+
   if (/^https?:\/\//i.test(path)) return path;
 
   return `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
@@ -145,6 +147,42 @@ const app = {
   const metaEl = document.getElementById("headerMeta");
   if (metaEl) metaEl.textContent = metaParts.join(" • ");
 })();
+const MAX_PROFILE_PICTURE_BYTES = 1 * 1024 * 1024;
+
+async function refreshSessionProfile() {
+  const studentID = sessionStorage.getItem("studentID");
+  if (!studentID) return;
+
+  try {
+    const response = await fetch(`${API_BASE}/api/profile/${studentID}`);
+    const data = await response.json();
+    if (!response.ok || !data.success) return;
+
+    sessionStorage.setItem("studentName", data.name || "");
+    sessionStorage.setItem("studentFirstName", data.firstName || "");
+    sessionStorage.setItem("studentLastName", data.lastName || "");
+    sessionStorage.setItem("studentEmail", data.email || "");
+    sessionStorage.setItem("studentStrand", data.strand || "");
+    sessionStorage.setItem("studentSection", data.section || "");
+    sessionStorage.setItem("studentProfilePicture", data.profilePictureUrl || "");
+
+    const nameEl = document.getElementById("headerName");
+    if (nameEl) nameEl.textContent = data.name || "Student";
+
+    const metaParts = [`Student No. ${studentID}`];
+    if (data.section) metaParts.push(data.section);
+    if (data.strand) metaParts.push(data.strand);
+    const metaEl = document.getElementById("headerMeta");
+    if (metaEl) metaEl.textContent = metaParts.join(" - ");
+
+    syncHeaderProfilePicture();
+    syncSettingsProfilePicturePreview();
+  } catch (err) {
+    console.warn("Could not refresh profile.", err);
+  }
+}
+
+refreshSessionProfile();
 
 const quizState = {
   currentQuestion: 0,
@@ -985,6 +1023,10 @@ async function uploadProfilePicture(file) {
 
   if (!studentId) {
     throw new Error("You must be logged in to update your profile picture.");
+  }
+
+  if (file.size > MAX_PROFILE_PICTURE_BYTES) {
+    throw new Error("Profile picture must be 1 MB or smaller.");
   }
 
   const formData = new FormData();
