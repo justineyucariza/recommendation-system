@@ -696,6 +696,32 @@
 
 <div id="assessment-tab-view" class="ai-system-wrapper hidden">
 
+    <div class="assessment-overview-grid">
+        <div class="assessment-overview-card">
+            <i class="bx bx-list-check" aria-hidden="true"></i>
+            <div>
+                <span>Progress</span>
+                <strong id="assessmentSummaryProgress">Step 1 of 6</strong>
+            </div>
+        </div>
+
+        <div class="assessment-overview-card">
+            <i class="bx bx-time-five" aria-hidden="true"></i>
+            <div>
+                <span>Assessment</span>
+                <strong>50 Questions</strong>
+            </div>
+        </div>
+
+        <div class="assessment-overview-card">
+            <i class="bx bx-bulb" aria-hidden="true"></i>
+            <div>
+                <span>Output</span>
+                <strong>Course Match</strong>
+            </div>
+        </div>
+    </div>
+
     
 
     <div class="progress-container">
@@ -1088,7 +1114,8 @@
                 class="btn-ai-generate"
                 onclick="submitFullAssessmentToAI()">
 
-                🎓 Finish Assessment
+                <i class="bx bx-check-circle" aria-hidden="true"></i>
+                <span>Finish Assessment</span>
 
             </button>
 
@@ -1123,6 +1150,13 @@
         <p id="ai-res-reasoning">
 
         </p>
+
+        <div class="recommendation-explainer">
+            <i class="bx bx-info-circle" aria-hidden="true"></i>
+            <span>
+                This recommendation combines your interests, skills, grades, preferences, and quiz answers.
+            </span>
+        </div>
 
         <div class="ai-next-steps">
 
@@ -1180,6 +1214,32 @@
 
         </div>
 
+        <div class="leaderboard-stats-grid">
+            <div class="leaderboard-stat-card">
+                <i class="bx bx-user-check" aria-hidden="true"></i>
+                <div>
+                    <span>Total Ranked</span>
+                    <strong id="leaderboardTotalStudents">0</strong>
+                </div>
+            </div>
+
+            <div class="leaderboard-stat-card">
+                <i class="bx bx-medal" aria-hidden="true"></i>
+                <div>
+                    <span>Top Score</span>
+                    <strong id="leaderboardTopScore">--</strong>
+                </div>
+            </div>
+
+            <div class="leaderboard-stat-card">
+                <i class="bx bx-stopwatch" aria-hidden="true"></i>
+                <div>
+                    <span>Fastest Time</span>
+                    <strong id="leaderboardFastestTime">--</strong>
+                </div>
+            </div>
+        </div>
+
         <!-- Highlight card for the current student's best rank -->
         <div id="myRankCard" class="my-rank-card hidden">
             <div class="my-rank-avatar-wrap">
@@ -1220,6 +1280,13 @@
     </div>
 
 </div>
+
+<footer class="app-footer">
+    <div class="container app-footer-inner">
+        <span>AcadSync</span>
+        <span>&copy; <span id="footerYear"></span> Course Recommendation System</span>
+    </div>
+</footer>
 
 <div id="logoutModal" class="modal-overlay hidden">
 

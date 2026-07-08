@@ -149,6 +149,11 @@ const app = {
 })();
 const MAX_PROFILE_PICTURE_BYTES = 1 * 1024 * 1024;
 
+const footerYearEl = document.getElementById("footerYear");
+if (footerYearEl) {
+  footerYearEl.textContent = new Date().getFullYear();
+}
+
 async function refreshSessionProfile() {
   const studentID = sessionStorage.getItem("studentID");
   if (!studentID) return;
@@ -695,6 +700,10 @@ function updateAssessmentProgress() {
   const stepText = document.getElementById("currentStep");
 
   if (stepText) stepText.textContent = app.currentStep;
+
+  const summary = document.getElementById("assessmentSummaryProgress");
+
+  if (summary) summary.textContent = `Step ${app.currentStep} of 6`;
 }
 
 function validateCurrentStep(step) {
@@ -1216,17 +1225,21 @@ async function loadLeaderboard() {
     if (!data.success || !data.leaderboard.length) {
       tbody.innerHTML =
         '<tr><td colspan="5" class="lb-loading">No quiz results yet. Complete the assessment to appear on the leaderboard!</td></tr>';
+      updateLeaderboardStats([]);
       return;
     }
 
     let myEntry = null;
+    updateLeaderboardStats(data.leaderboard);
 
     tbody.innerHTML = data.leaderboard
       .map(function (entry) {
         const isMe = String(entry.studentID) === String(currentStudentId);
         if (isMe) myEntry = entry;
 
-        const rankCell = `<td class="lb-rank ${entry.rank <= 3 ? `lb-top${entry.rank}` : ""}">#${entry.rank}</td>`;
+        const rankLabels = { 1: "Top 1", 2: "Top 2", 3: "Top 3" };
+        const rankText = rankLabels[entry.rank] || `#${entry.rank}`;
+        const rankCell = `<td class="lb-rank ${entry.rank <= 3 ? `lb-top${entry.rank}` : ""}"><span>${rankText}</span></td>`;
 
         const avatarMarkup = entry.profilePictureUrl
           ? `<img src="${resolveApiUrl(entry.profilePictureUrl)}" alt="${entry.name} profile picture">`
@@ -1279,6 +1292,34 @@ async function loadLeaderboard() {
   } catch (err) {
     tbody.innerHTML =
       '<tr><td colspan="5" class="lb-loading">Could not load leaderboard. Make sure course.py is running.</td></tr>';
+    updateLeaderboardStats([]);
     console.error("Leaderboard error:", err);
   }
+}
+
+function updateLeaderboardStats(entries) {
+  const totalEl = document.getElementById("leaderboardTotalStudents");
+  const topScoreEl = document.getElementById("leaderboardTopScore");
+  const fastestEl = document.getElementById("leaderboardFastestTime");
+
+  if (totalEl) totalEl.textContent = entries.length;
+
+  if (!entries.length) {
+    if (topScoreEl) topScoreEl.textContent = "--";
+    if (fastestEl) fastestEl.textContent = "--";
+    return;
+  }
+
+  const topScore = Math.max(
+    ...entries.map((entry) => Number(entry.total_score) || 0),
+  );
+  const fastest = entries.reduce((best, entry) => {
+    if (!best) return entry;
+    return (entry.time_taken_seconds || 0) < (best.time_taken_seconds || 0)
+      ? entry
+      : best;
+  }, null);
+
+  if (topScoreEl) topScoreEl.textContent = `${topScore}%`;
+  if (fastestEl) fastestEl.textContent = fastest ? fastest.time_display : "--";
 }
