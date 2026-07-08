@@ -171,6 +171,21 @@ def is_email_configured():
     ])
 
 
+def email_provider_name():
+    if RESEND_CONFIG["api_key"] and RESEND_CONFIG["from_email"]:
+        return "resend"
+    if is_email_configured():
+        return "smtp"
+    return "not configured"
+
+
+def public_email_error_message(error):
+    text = str(error)
+    if len(text) > 240:
+        text = text[:237] + "..."
+    return f"Could not send email using {email_provider_name()}: {text}"
+
+
 def send_email_with_smtp(to_email, subject, body):
     message = EmailMessage()
     message["From"] = SMTP_CONFIG["from_email"]
@@ -437,7 +452,15 @@ def health_check():
         "success": True,
         "database": "connected",
         "host": DB_CONFIG["host"],
-        "database_name": DB_CONFIG["database"]
+        "database_name": DB_CONFIG["database"],
+        "email_provider": email_provider_name(),
+        "resend_configured": bool(RESEND_CONFIG["api_key"] and RESEND_CONFIG["from_email"]),
+        "smtp_configured": all([
+            SMTP_CONFIG["host"],
+            SMTP_CONFIG["username"],
+            SMTP_CONFIG["password"],
+            SMTP_CONFIG["from_email"],
+        ])
     })
 
 
@@ -557,7 +580,7 @@ def register():
         try:
             send_registration_email(email, format_full_name(firstname, lastname))
         except Exception as mail_error:
-            email_notice = "Account created, but the confirmation email could not be sent."
+            email_notice = public_email_error_message(mail_error)
             print(f"[EMAIL REGISTER ERROR] {mail_error}")
 
         return jsonify({
@@ -627,7 +650,7 @@ def send_forgot_password_code():
             print(f"[EMAIL RESET ERROR] {mail_error}")
             return jsonify({
                 "success": False,
-                "message": "Could not send email. Please check the server email settings."
+                "message": public_email_error_message(mail_error)
             }), 500
 
         conn.commit()
