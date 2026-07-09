@@ -313,6 +313,26 @@ header {
     accent-color: var(--brand-700);
 }
 
+.login-help-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+    font-size: .9rem;
+}
+
+.login-help-row a {
+    color: #fff;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.login-help-row a:hover,
+.login-help-row a:focus-visible {
+    color: var(--brand-100);
+    text-decoration: underline;
+    outline: none;
+}
+
 .form-message {
     margin: -6px 0 12px;
     padding: 10px 12px;
@@ -372,21 +392,49 @@ header {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin: -2px 0 14px;
-    padding: 10px 12px;
-    border: 1px solid rgba(255, 255, 255, .28);
+    margin: 2px 0 14px;
+    padding: 12px;
+    border: 1px solid rgba(232, 246, 238, .88);
     border-radius: var(--radius);
-    background: rgba(255, 255, 255, .15);
+    background: rgba(255, 255, 255, .88);
+    box-shadow: 0 10px 24px rgba(18, 61, 42, .12);
+}
+
+.privacy-copy {
+    min-width: 0;
+}
+
+.privacy-copy strong {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--ink-900);
+    font-size: .84rem;
+    line-height: 1.25;
+}
+
+.privacy-copy strong i {
+    color: var(--brand-700);
+    font-size: 1rem;
+}
+
+.privacy-copy span {
+    display: block;
+    margin-top: 3px;
+    color: var(--ink-700);
+    font-size: .76rem;
+    line-height: 1.35;
 }
 
 .privacy-check {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: #fff;
+    color: var(--brand-800);
     font-size: .82rem;
-    font-weight: 700;
+    font-weight: 800;
     line-height: 1.35;
+    white-space: nowrap;
 }
 
 .privacy-check input {
@@ -398,18 +446,21 @@ header {
 
 .privacy-read-btn {
     flex: 0 0 auto;
-    border: 0;
-    background: transparent;
+    min-height: 34px;
+    padding: 0 10px;
+    border: 1px solid var(--brand-700);
+    border-radius: 8px;
+    background: var(--brand-700);
     color: #fff;
     font-size: .8rem;
     font-weight: 800;
-    text-decoration: underline;
     cursor: pointer;
+    transition: var(--speed);
 }
 
 .privacy-read-btn:hover,
 .privacy-read-btn:focus-visible {
-    color: var(--brand-100);
+    background: var(--brand-800);
     outline: none;
 }
 
@@ -572,9 +623,17 @@ header {
     }
 
     .privacy-consent {
-        align-items: flex-start;
+        align-items: stretch;
         flex-direction: column;
-        gap: 6px;
+        gap: 8px;
+    }
+
+    .privacy-check {
+        justify-content: flex-start;
+    }
+
+    .privacy-read-btn {
+        width: 100%;
     }
 
     header {

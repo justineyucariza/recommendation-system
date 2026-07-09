@@ -59,14 +59,8 @@
                 <input type="button" class="submit" value="Sign In" onclick="loginUser()">
             </div>
 
-            <div class="two-col">
-                <div class="one">
-                    <input type="checkbox" id="login-check">
-                    <label for="login-check"> Remember me</label>
-                </div>
-                <div class="two">
-                    <label><a href="#" id="forgotPwdLink">Forgot Password?</a></label>
-                </div>
+            <div class="login-help-row">
+                <a href="#" id="forgotPwdLink">Forgot Password?</a>
             </div>
 
         </div>
@@ -127,12 +121,16 @@
             </div>
 
             <div class="privacy-consent">
+                <div class="privacy-copy">
+                    <strong><i class="bx bx-shield-quarter"></i> Privacy Notice Required</strong>
+                    <span>Please read and accept before creating your account.</span>
+                </div>
                 <label class="privacy-check">
                     <input type="checkbox" id="reg-privacy">
-                    <span>I agree to the Privacy Notice.</span>
+                    <span>I agree</span>
                 </label>
                 <button type="button" class="privacy-read-btn" onclick="openRegisterPrivacyNotice()">
-                    Read Privacy Notice
+                    Read Notice
                 </button>
             </div>
 
@@ -351,14 +349,6 @@
     });
 
     // ── REMEMBER ME — restore saved email on page load ─────────────
-    (function restoreRememberedUser() {
-        const remembered = localStorage.getItem("acadsync-remember-email");
-        if (remembered) {
-            document.getElementById("login-email").value = remembered;
-            document.getElementById("login-check").checked = true;
-        }
-    })();
-
     // ── FORGOT PASSWORD — modal open/close ─────────────────────────
     const forgotPwdModal = document.getElementById("forgotPwdModal");
 
@@ -471,7 +461,6 @@
     async function loginUser() {
         const email    = document.getElementById("login-email").value.trim();
         const password = document.getElementById("login-password").value.trim();
-        const remember = document.getElementById("login-check").checked;
         const errEl    = document.getElementById("login-error");
 
         hideFormMessage(errEl);
@@ -490,13 +479,6 @@
             const data = await res.json();
 
             if (data.success) {
-                // Remember Me
-                if (remember) {
-                    localStorage.setItem("acadsync-remember-email", email);
-                } else {
-                    localStorage.removeItem("acadsync-remember-email");
-                }
-
                 // Persist every field the dashboard needs — no hardcoding on the other side
                 sessionStorage.setItem("studentID",     data.studentID);
                 sessionStorage.setItem("studentName",   data.name);
