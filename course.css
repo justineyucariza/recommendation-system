@@ -128,7 +128,7 @@ body {
 .form-box {
     position: relative;
     width: min(100%, 512px);
-    height: 680px;
+    height: 720px;
     overflow: hidden;
     padding: 34px 0;
     background: var(--surface-soft);
@@ -367,6 +367,52 @@ header {
     pointer-events: none;
 }
 
+.privacy-consent {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: -2px 0 14px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, .28);
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, .15);
+}
+
+.privacy-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+    font-size: .82rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.privacy-check input {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+    accent-color: var(--brand-700);
+}
+
+.privacy-read-btn {
+    flex: 0 0 auto;
+    border: 0;
+    background: transparent;
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 800;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.privacy-read-btn:hover,
+.privacy-read-btn:focus-visible {
+    color: var(--brand-100);
+    outline: none;
+}
+
 .modal-overlay {
     position: fixed;
     inset: 0;
@@ -439,6 +485,41 @@ header {
     overflow-y: auto;
 }
 
+.privacy-flow-box {
+    width: min(100%, 560px);
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+}
+
+.privacy-notice-list {
+    display: grid;
+    gap: 10px;
+    margin: 16px 0;
+}
+
+.privacy-notice-list div {
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--brand-50);
+}
+
+.privacy-notice-list strong {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--ink-900);
+}
+
+.privacy-notice-list span {
+    color: var(--ink-700);
+    font-size: .88rem;
+    line-height: 1.5;
+}
+
+.privacy-modal-actions {
+    margin-top: 18px;
+}
+
 .secondary-submit {
     background: linear-gradient(135deg, var(--brand-800), var(--brand-600));
 }
@@ -470,7 +551,7 @@ header {
     }
 
     .form-box {
-        height: 620px;
+        height: 690px;
         padding: 28px 0;
     }
 
@@ -488,6 +569,12 @@ header {
     .two-forms {
         grid-template-columns: 1fr;
         gap: 0;
+    }
+
+    .privacy-consent {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 6px;
     }
 
     header {

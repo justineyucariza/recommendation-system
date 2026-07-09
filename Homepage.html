@@ -1385,68 +1385,8 @@
     <div class="container app-footer-inner">
         <span>AcadSync</span>
         <span>&copy; <span id="footerYear"></span> Course Recommendation System</span>
-        <button type="button" id="privacyNoticeBtn" class="footer-link-button">
-            Privacy Notice
-        </button>
     </div>
 </footer>
-
-<div id="privacyNoticeModal" class="modal-overlay hidden">
-
-    <div class="modal-box privacy-modal-box">
-
-        <div class="modal-header">
-
-            <i class="bx bx-shield-quarter" aria-hidden="true"></i>
-            <span>Privacy Notice</span>
-
-        </div>
-
-        <div class="modal-body">
-
-            <h3>How AcadSync uses student data</h3>
-
-            <p class="modal-description">
-                AcadSync stores only the information needed to sign in, show your profile,
-                save quiz attempts, and generate course recommendations.
-            </p>
-
-            <div class="privacy-list">
-                <div>
-                    <strong>Account data</strong>
-                    <span>Name, email address, strand, section, and encrypted password.</span>
-                </div>
-                <div>
-                    <strong>Profile data</strong>
-                    <span>Optional profile picture and dashboard preferences such as dark mode.</span>
-                </div>
-                <div>
-                    <strong>Assessment data</strong>
-                    <span>Grades, quiz scores, recommended course, match score, time taken, and history.</span>
-                </div>
-                <div>
-                    <strong>Email use</strong>
-                    <span>Email is used for password reset codes, registration confirmation, and optional result sending.</span>
-                </div>
-            </div>
-
-            <p class="modal-description">
-                AcadSync does not show your password in emails and does not sell student data.
-            </p>
-
-        </div>
-
-        <div class="modal-footer">
-
-            <button type="button" id="closePrivacyNoticeBtn" class="btn-modal btn-modal-confirm">
-                Got it
-            </button>
-
-        </div>
-
-    </div>
-
-</div>
 
 <div id="logoutModal" class="modal-overlay hidden">
 
@@ -1908,9 +1848,16 @@
 
             <div class="quiz-history-header">
 
-                <h3>Quiz History</h3>
+                <div>
+                    <h3>Quiz History</h3>
 
-                <p>Review every saved recommendation attempt.</p>
+                    <p>Review every saved recommendation attempt.</p>
+                </div>
+
+                <button type="button" id="clearQuizHistoryBtn" class="btn-history-clear">
+                    <i class="bx bx-trash" aria-hidden="true"></i>
+                    <span>Clear History</span>
+                </button>
 
             </div>
 
@@ -1940,6 +1887,43 @@
 
                 Save Changes
 
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div id="clearHistoryModal" class="modal-overlay hidden">
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+
+            <i class="bx bx-trash" aria-hidden="true"></i>
+            <span>Clear Quiz History</span>
+
+        </div>
+
+        <div class="modal-body">
+
+            <h3>Are you sure you want to clear your quiz history?</h3>
+
+            <p class="modal-description">
+                This deletes only your saved quiz attempts. Other students' records will not be changed.
+            </p>
+
+        </div>
+
+        <div class="modal-footer">
+
+            <button type="button" id="cancelClearHistoryBtn" class="btn-modal btn-modal-cancel">
+                Cancel
+            </button>
+
+            <button type="button" id="confirmClearHistoryBtn" class="btn-modal btn-modal-danger">
+                Clear History
             </button>
 
         </div>

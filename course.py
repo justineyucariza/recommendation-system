@@ -126,6 +126,14 @@ def is_valid_email(email):
     return bool(EMAIL_PATTERN.fullmatch(email or ""))
 
 
+def is_truthy(value):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value == 1
+    return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
 def password_validation_errors(password):
     """Return clear requirements missing from a proposed account password."""
     errors = []
@@ -341,6 +349,8 @@ def run_startup_migrations():
                 strand_id  INT,
                 section    VARCHAR(100) DEFAULT NULL,
                 profile_picture LONGTEXT DEFAULT NULL,
+                privacy_accepted TINYINT(1) NOT NULL DEFAULT 0,
+                privacy_accepted_at DATETIME DEFAULT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (strand_id) REFERENCES strands(strand_id)
             )
@@ -363,6 +373,18 @@ def run_startup_migrations():
             cur.execute("ALTER TABLE users MODIFY COLUMN profile_picture LONGTEXT DEFAULT NULL")
         except Error as e:
             print(f"[MIGRATION] profile_picture type: {e}")
+
+        try:
+            cur.execute("ALTER TABLE users ADD COLUMN privacy_accepted TINYINT(1) NOT NULL DEFAULT 0")
+        except Error as e:
+            if "Duplicate column" not in str(e):
+                print(f"[MIGRATION] privacy_accepted column: {e}")
+
+        try:
+            cur.execute("ALTER TABLE users ADD COLUMN privacy_accepted_at DATETIME DEFAULT NULL")
+        except Error as e:
+            if "Duplicate column" not in str(e):
+                print(f"[MIGRATION] privacy_accepted_at column: {e}")
 
         # quiz_results — stores one row per quiz attempt
         cur.execute("""
@@ -570,9 +592,16 @@ def register():
     password  = data.get('password', '').strip()
     strand    = data.get('strand', '').strip()
     section   = data.get('section', '').strip()
+    privacy_accepted = is_truthy(data.get('privacyAccepted'))
 
     if not all([firstname, lastname, email, password, strand]):
         return jsonify({"success": False, "message": "Please fill in all fields."}), 400
+
+    if not privacy_accepted:
+        return jsonify({
+            "success": False,
+            "message": "Please read and accept the Privacy Notice before creating an account."
+        }), 400
 
     if not is_valid_email(email):
         return jsonify({
@@ -604,9 +633,21 @@ def register():
         strand_id = get_or_create_strand_id(cursor, strand)
 
         cursor.execute("""
-            INSERT INTO users (first_name, last_name, email, password, strand_id, section, profile_picture)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (firstname, lastname, email, hash_password(password), strand_id, section or None, None))
+            INSERT INTO users
+                (first_name, last_name, email, password, strand_id, section,
+                 profile_picture, privacy_accepted, privacy_accepted_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            firstname,
+            lastname,
+            email,
+            hash_password(password),
+            strand_id,
+            section or None,
+            None,
+            1,
+            datetime.utcnow()
+        ))
         conn.commit()
 
         new_id = cursor.lastrowid
@@ -964,6 +1005,30 @@ def quiz_history(student_id):
         })
 
     return jsonify({"success": True, "history": history})
+
+
+@app.route('/api/quiz-history/<int:student_id>', methods=['DELETE'])
+def clear_quiz_history(student_id):
+    conn = get_db()
+    if not conn:
+        return jsonify({"success": False, "message": "Database connection failed."}), 500
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM quiz_results WHERE studentID = %s", (student_id,))
+        deleted_count = cursor.rowcount
+        conn.commit()
+    except Error as e:
+        print(f"[DB CLEAR HISTORY ERROR] {e}")
+        return jsonify({"success": False, "message": "Could not clear quiz history."}), 500
+    finally:
+        conn.close()
+
+    return jsonify({
+        "success": True,
+        "message": "Quiz history cleared successfully.",
+        "deleted": deleted_count
+    })
 
 
 @app.route('/api/profile-picture', methods=['POST'])

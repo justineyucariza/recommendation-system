@@ -1473,9 +1473,11 @@ async function uploadProfilePicture(file) {
 
 async function loadQuizHistory() {
   const container = document.getElementById("quizHistoryList");
+  const clearButton = document.getElementById("clearQuizHistoryBtn");
   const studentId = sessionStorage.getItem("studentID");
 
   if (!container || !studentId) return;
+  if (clearButton) clearButton.disabled = true;
 
   container.innerHTML =
     '<div class="quiz-history-loading">Loading quiz history…</div>';
@@ -1492,6 +1494,7 @@ async function loadQuizHistory() {
     }
 
     updateProfileCompletion(true);
+    if (clearButton) clearButton.disabled = false;
 
     container.innerHTML = data.history
       .map(function (entry) {
@@ -1515,6 +1518,46 @@ async function loadQuizHistory() {
       '<div class="quiz-history-empty">Could not load quiz history.</div>';
     updateProfileCompletion(false);
     console.error("Quiz history error:", err);
+  }
+}
+
+async function clearQuizHistory() {
+  const container = document.getElementById("quizHistoryList");
+  const clearButton = document.getElementById("clearQuizHistoryBtn");
+  const studentId = sessionStorage.getItem("studentID");
+
+  if (!studentId) {
+    showNotification("Please sign in before clearing quiz history.", "error");
+    return;
+  }
+
+  if (clearButton) clearButton.disabled = true;
+  if (container) {
+    container.innerHTML =
+      '<div class="quiz-history-loading">Clearing quiz history...</div>';
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/api/quiz-history/${studentId}`, {
+      method: "DELETE",
+    });
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "Could not clear quiz history.");
+    }
+
+    closeModal("clearHistoryModal");
+    showNotification("Quiz history cleared successfully.", "success");
+    await loadQuizHistory();
+    await loadLeaderboard();
+  } catch (err) {
+    showNotification(err.message || "Could not clear quiz history.", "error");
+    if (container) {
+      container.innerHTML =
+        '<div class="quiz-history-empty">Could not clear quiz history.</div>';
+    }
+    if (clearButton) clearButton.disabled = false;
   }
 }
 
@@ -1586,12 +1629,16 @@ document.getElementById("confirmRetakeBtn")?.addEventListener("click", () => {
 });
 
 document
-  .getElementById("privacyNoticeBtn")
-  ?.addEventListener("click", () => openModal("privacyNoticeModal"));
+  .getElementById("clearQuizHistoryBtn")
+  ?.addEventListener("click", () => openModal("clearHistoryModal"));
 
 document
-  .getElementById("closePrivacyNoticeBtn")
-  ?.addEventListener("click", () => closeModal("privacyNoticeModal"));
+  .getElementById("cancelClearHistoryBtn")
+  ?.addEventListener("click", () => closeModal("clearHistoryModal"));
+
+document
+  .getElementById("confirmClearHistoryBtn")
+  ?.addEventListener("click", clearQuizHistory);
 
 // ---------- Quiz panel navigation buttons ----------
 // Now that all 50 questions show at once:

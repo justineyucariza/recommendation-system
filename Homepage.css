@@ -1544,7 +1544,7 @@ ul{
 
     display:flex;
     justify-content:space-between;
-    align-items:baseline;
+    align-items:center;
     gap:10px;
     margin-bottom:14px;
 
@@ -1561,6 +1561,41 @@ ul{
 
     font-size:.86rem;
     color:var(--gray-500);
+
+}
+
+.btn-history-clear{
+
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    min-height:38px;
+    padding:0 14px;
+    border:1px solid #fecaca;
+    border-radius:8px;
+    background:#fff5f5;
+    color:#b42318;
+    font-weight:800;
+    cursor:pointer;
+    transition:background var(--transition), color var(--transition), transform var(--transition), opacity var(--transition);
+
+}
+
+.btn-history-clear:hover:not(:disabled),
+.btn-history-clear:focus-visible:not(:disabled){
+
+    background:#b42318;
+    color:#fff;
+    transform:translateY(-1px);
+    outline:none;
+
+}
+
+.btn-history-clear:disabled{
+
+    opacity:.55;
+    cursor:not-allowed;
 
 }
 
@@ -1671,6 +1706,21 @@ ul{
 .btn-modal-cancel:hover{
 
     background:var(--gray-300);
+
+}
+
+.btn-modal-danger{
+
+    background:#b42318;
+    color:#fff;
+    border:1px solid #b42318;
+
+}
+
+.btn-modal-danger:hover{
+
+    background:#8a1f17;
+    border-color:#8a1f17;
 
 }
 
@@ -3121,6 +3171,15 @@ body.dark-mode .btn-settings-link {
         flex-direction: column;
         align-items: flex-start;
     }
+
+    .quiz-history-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .btn-history-clear {
+        width: 100%;
+    }
 }
 
 /* Modern icon alignment and a targeted scroll fix for the settings modal. */
@@ -3411,49 +3470,6 @@ body {
 .app-footer-inner span:first-child {
     color: var(--gray-900);
     font-weight: 800;
-}
-
-.footer-link-button {
-    border: 0;
-    background: transparent;
-    color: var(--primary-dark);
-    font-weight: 800;
-    cursor: pointer;
-}
-
-.footer-link-button:hover,
-.footer-link-button:focus-visible {
-    color: var(--primary);
-    text-decoration: underline;
-    outline: none;
-}
-
-.privacy-modal-box {
-    max-width: 680px;
-}
-
-.privacy-list {
-    display: grid;
-    gap: 12px;
-    margin: 18px 0;
-}
-
-.privacy-list div {
-    padding: 14px;
-    border: 1px solid var(--gray-200);
-    border-radius: 8px;
-    background: var(--gray-50);
-}
-
-.privacy-list strong {
-    display: block;
-    margin-bottom: 4px;
-    color: var(--gray-900);
-}
-
-.privacy-list span {
-    color: var(--gray-700);
-    line-height: 1.5;
 }
 
 .student-progress-card {
@@ -3804,8 +3820,16 @@ body.dark-mode .app-footer-inner span:first-child {
     color: #f5faf7;
 }
 
-body.dark-mode .footer-link-button {
-    color: #8ee0ad;
+body.dark-mode .btn-history-clear {
+    background: rgba(248, 113, 113, .12);
+    border-color: rgba(248, 113, 113, .36);
+    color: #fecaca;
+}
+
+body.dark-mode .btn-history-clear:hover:not(:disabled),
+body.dark-mode .btn-history-clear:focus-visible:not(:disabled) {
+    background: #b42318;
+    color: #fff;
 }
 
 body.dark-mode .student-progress-card,
@@ -3854,19 +3878,6 @@ body.dark-mode .comparison-card b {
 
 body.dark-mode .leaderboard-search-row input {
     color: #f5faf7;
-}
-
-body.dark-mode .privacy-list div {
-    background: #17231c;
-    border-color: #26372d;
-}
-
-body.dark-mode .privacy-list strong {
-    color: #f5faf7;
-}
-
-body.dark-mode .privacy-list span {
-    color: #d7e2dc;
 }
 
 body.dark-mode .btn-inline-soft,

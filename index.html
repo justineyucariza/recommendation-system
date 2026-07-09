@@ -126,6 +126,16 @@
                 <i class="bx bx-book-bookmark"></i>
             </div>
 
+            <div class="privacy-consent">
+                <label class="privacy-check">
+                    <input type="checkbox" id="reg-privacy">
+                    <span>I agree to the Privacy Notice.</span>
+                </label>
+                <button type="button" class="privacy-read-btn" onclick="openRegisterPrivacyNotice()">
+                    Read Privacy Notice
+                </button>
+            </div>
+
             <p id="reg-error" class="form-message message-error" style="display:none;"></p>
 
             <div class="input-box">
@@ -134,6 +144,53 @@
 
         </div>
 
+    </div>
+
+    <!-- SIGN UP PRIVACY NOTICE MODAL -->
+    <div class="modal-overlay hidden" id="registerPrivacyModal">
+        <div class="modal-box privacy-flow-box">
+
+            <div class="modal-head">
+                <span><i class="bx bx-shield-quarter"></i> Privacy Notice</span>
+                <button type="button" class="modal-close-btn" onclick="closeRegisterPrivacyNotice()" aria-label="Close privacy notice">
+                    <i class="bx bx-x"></i>
+                </button>
+            </div>
+
+            <p class="modal-sub">
+                Please review how AcadSync uses student data before creating an account.
+            </p>
+
+            <div class="privacy-notice-list">
+                <div>
+                    <strong>Account data</strong>
+                    <span>Name, email address, strand, section, and encrypted password.</span>
+                </div>
+                <div>
+                    <strong>Profile data</strong>
+                    <span>Optional profile picture and dashboard preferences such as dark mode.</span>
+                </div>
+                <div>
+                    <strong>Assessment data</strong>
+                    <span>Grades, quiz scores, recommended course, match score, time taken, and history.</span>
+                </div>
+                <div>
+                    <strong>Email use</strong>
+                    <span>Email is used for password reset codes, registration confirmation, and optional result sending.</span>
+                </div>
+            </div>
+
+            <p class="modal-sub">
+                AcadSync does not show your password in emails and does not sell student data.
+            </p>
+
+            <div class="privacy-modal-actions">
+                <button type="button" class="submit" onclick="acceptRegisterPrivacyNotice()">
+                    I agree to the Privacy Notice
+                </button>
+            </div>
+
+        </div>
     </div>
 
     <!-- FORGOT PASSWORD MODAL -->
@@ -270,6 +327,28 @@
         icon.className = showing ? "bx bx-show" : "bx bx-hide";
         button.setAttribute("aria-label", showing ? "Show password" : "Hide password");
     }
+
+    function openRegisterPrivacyNotice() {
+        document.getElementById("registerPrivacyModal").classList.remove("hidden");
+    }
+
+    function closeRegisterPrivacyNotice() {
+        document.getElementById("registerPrivacyModal").classList.add("hidden");
+    }
+
+    function acceptRegisterPrivacyNotice() {
+        document.getElementById("reg-privacy").checked = true;
+        closeRegisterPrivacyNotice();
+        showFormMessage(
+            document.getElementById("reg-error"),
+            "Privacy Notice accepted. You can now complete registration.",
+            "success"
+        );
+    }
+
+    document.getElementById("registerPrivacyModal").addEventListener("click", (e) => {
+        if (e.target.id === "registerPrivacyModal") closeRegisterPrivacyNotice();
+    });
 
     // ── REMEMBER ME — restore saved email on page load ─────────────
     (function restoreRememberedUser() {
@@ -446,6 +525,7 @@
         const password  = document.getElementById("reg-password").value.trim();
         const confirm   = document.getElementById("reg-confirm-password").value.trim();
         const strand    = document.getElementById("reg-strand").value;
+        const privacyAccepted = document.getElementById("reg-privacy").checked;
         const errEl     = document.getElementById("reg-error");
 
         hideFormMessage(errEl);
@@ -471,11 +551,17 @@
             return;
         }
 
+        if (!privacyAccepted) {
+            showFormMessage(errEl, "Please read and accept the Privacy Notice before creating an account.");
+            openRegisterPrivacyNotice();
+            return;
+        }
+
         try {
             const res  = await fetch(`${API_BASE}/api/register`, {
                 method:  "POST",
                 headers: { "Content-Type": "application/json" },
-                body:    JSON.stringify({ firstname, lastname, email, password, strand })
+                body:    JSON.stringify({ firstname, lastname, email, password, strand, privacyAccepted })
             });
             const data = await res.json();
 
