@@ -123,14 +123,13 @@
             <div class="privacy-consent">
                 <div class="privacy-copy">
                     <strong><i class="bx bx-shield-quarter"></i> Privacy Notice Required</strong>
-                    <span>Please read and accept before creating your account.</span>
+                    <span id="privacy-status-text">Open the notice and accept it before creating your account.</span>
                 </div>
-                <label class="privacy-check">
-                    <input type="checkbox" id="reg-privacy">
-                    <span>I agree</span>
-                </label>
+                <span id="privacyAcceptedBadge" class="privacy-accepted-badge hidden" aria-label="Privacy Notice accepted">
+                    <i class="bx bx-check"></i>
+                </span>
                 <button type="button" class="privacy-read-btn" onclick="openRegisterPrivacyNotice()">
-                    Read Notice
+                    Read & Accept
                 </button>
             </div>
 
@@ -182,8 +181,13 @@
                 AcadSync does not show your password in emails and does not sell student data.
             </p>
 
+            <label class="privacy-modal-agree">
+                <input type="checkbox" id="privacy-modal-agree">
+                <span>I have read and agree to the Privacy Notice.</span>
+            </label>
+
             <div class="privacy-modal-actions">
-                <button type="button" class="submit" onclick="acceptRegisterPrivacyNotice()">
+                <button type="button" id="acceptPrivacyBtn" class="submit" onclick="acceptRegisterPrivacyNotice()" disabled>
                     I agree to the Privacy Notice
                 </button>
             </div>
@@ -326,8 +330,11 @@
         button.setAttribute("aria-label", showing ? "Show password" : "Hide password");
     }
 
+    let registerPrivacyAccepted = false;
+
     function openRegisterPrivacyNotice() {
         document.getElementById("registerPrivacyModal").classList.remove("hidden");
+        syncPrivacyAcceptButton();
     }
 
     function closeRegisterPrivacyNotice() {
@@ -335,7 +342,14 @@
     }
 
     function acceptRegisterPrivacyNotice() {
-        document.getElementById("reg-privacy").checked = true;
+        if (!document.getElementById("privacy-modal-agree").checked) {
+            return;
+        }
+        registerPrivacyAccepted = true;
+        document.getElementById("privacy-status-text").textContent =
+            "Privacy Notice accepted. You can now complete registration.";
+        document.querySelector(".privacy-consent").classList.add("accepted");
+        document.getElementById("privacyAcceptedBadge").classList.remove("hidden");
         closeRegisterPrivacyNotice();
         showFormMessage(
             document.getElementById("reg-error"),
@@ -348,7 +362,14 @@
         if (e.target.id === "registerPrivacyModal") closeRegisterPrivacyNotice();
     });
 
-    // ── REMEMBER ME — restore saved email on page load ─────────────
+    function syncPrivacyAcceptButton() {
+        const checkbox = document.getElementById("privacy-modal-agree");
+        const button = document.getElementById("acceptPrivacyBtn");
+        button.disabled = !checkbox.checked;
+    }
+
+    document.getElementById("privacy-modal-agree").addEventListener("change", syncPrivacyAcceptButton);
+
     // ── FORGOT PASSWORD — modal open/close ─────────────────────────
     const forgotPwdModal = document.getElementById("forgotPwdModal");
 
@@ -507,7 +528,7 @@
         const password  = document.getElementById("reg-password").value.trim();
         const confirm   = document.getElementById("reg-confirm-password").value.trim();
         const strand    = document.getElementById("reg-strand").value;
-        const privacyAccepted = document.getElementById("reg-privacy").checked;
+        const privacyAccepted = registerPrivacyAccepted;
         const errEl     = document.getElementById("reg-error");
 
         hideFormMessage(errEl);

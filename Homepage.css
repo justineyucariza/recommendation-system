@@ -3402,6 +3402,66 @@ body {
     font-size: 1.15rem;
 }
 
+.recommendation-summary-box {
+    display: grid;
+    gap: 14px;
+    margin: 16px 0 18px;
+    padding: 16px;
+    border: 1px solid rgba(31, 111, 73, .18);
+    border-radius: 8px;
+    background: linear-gradient(135deg, #f4fbf7, #ffffff);
+    box-shadow: var(--shadow-sm);
+}
+
+.recommendation-summary-box.hidden {
+    display: none;
+}
+
+.recommendation-summary-box h5 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    color: var(--gray-900);
+    font-size: .98rem;
+}
+
+.recommendation-summary-box h5 i {
+    color: var(--primary);
+}
+
+.recommendation-summary-box p {
+    color: var(--gray-700);
+    line-height: 1.55;
+}
+
+.recommendation-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.recommendation-summary-grid div {
+    padding: 12px;
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    background: var(--white);
+}
+
+.recommendation-summary-grid span {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--gray-500);
+    font-size: .78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.recommendation-summary-grid strong {
+    color: var(--gray-900);
+    line-height: 1.45;
+}
+
 .btn-ai-generate,
 .btn-step-next,
 .btn-step-back {
@@ -3833,6 +3893,7 @@ body.dark-mode .btn-history-clear:focus-visible:not(:disabled) {
 }
 
 body.dark-mode .student-progress-card,
+body.dark-mode .recommendation-summary-box,
 body.dark-mode .recommendation-breakdown-box,
 body.dark-mode .comparison-card,
 body.dark-mode .leaderboard-search-row input {
@@ -3841,6 +3902,8 @@ body.dark-mode .leaderboard-search-row input {
 }
 
 body.dark-mode .student-progress-copy strong,
+body.dark-mode .recommendation-summary-box h5,
+body.dark-mode .recommendation-summary-grid strong,
 body.dark-mode .recommendation-breakdown-box h5,
 body.dark-mode .breakdown-row strong,
 body.dark-mode .comparison-card strong {
@@ -3848,6 +3911,7 @@ body.dark-mode .comparison-card strong {
 }
 
 body.dark-mode .student-progress-copy p,
+body.dark-mode .recommendation-summary-box p,
 body.dark-mode .breakdown-list,
 body.dark-mode .comparison-list,
 body.dark-mode .strand-guidance,
@@ -3870,6 +3934,15 @@ body.dark-mode .btn-result-action:hover {
 body.dark-mode .comparison-card.best {
     background: rgba(142, 224, 173, .12);
     border-color: rgba(142, 224, 173, .24);
+}
+
+body.dark-mode .recommendation-summary-grid div {
+    background: #0f1712;
+    border-color: #26372d;
+}
+
+body.dark-mode .recommendation-summary-grid span {
+    color: #9fb2a7;
 }
 
 body.dark-mode .comparison-card b {
@@ -3903,6 +3976,7 @@ body.dark-mode .course-detail-grid strong {
     .assessment-overview-grid,
     .leaderboard-stats-grid,
     .student-progress-card,
+    .recommendation-summary-grid,
     .recommendation-breakdown-grid,
     .course-detail-grid {
         grid-template-columns: 1fr;

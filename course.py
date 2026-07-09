@@ -318,6 +318,64 @@ def parse_valid_grade(value):
     return None
 
 
+def build_recommendation_summary(course_key, course_title, alternative_title, course_scores, final_scores):
+    labels = {
+        "interest": "interests",
+        "skill": "skills",
+        "career": "career goals",
+        "academic": "academic performance",
+        "preference": "strand preference",
+        "quiz": "assessment quiz",
+    }
+    category_values = course_scores.get(course_key, {})
+    sorted_categories = sorted(
+        category_values.items(),
+        key=lambda item: item[1],
+        reverse=True
+    )
+    strengths = [
+        {
+            "label": labels.get(key, key),
+            "score": round(value, 2)
+        }
+        for key, value in sorted_categories
+        if value > 0
+    ][:3]
+
+    improvement_key, improvement_score = min(
+        category_values.items(),
+        key=lambda item: item[1]
+    )
+    top_strength_labels = [item["label"] for item in strengths]
+    if top_strength_labels:
+        strength_text = ", ".join(top_strength_labels)
+    else:
+        strength_text = "your submitted profile and assessment answers"
+
+    explanation = (
+        f"{course_title} is your strongest match because your {strength_text} "
+        "align best with this course compared with the other available programs."
+    )
+    improvement = (
+        f"Your lowest area for this match is {labels.get(improvement_key, improvement_key)} "
+        f"({round(improvement_score, 2)}%). Strengthening this area can improve future matches."
+    )
+
+    return {
+        "explanation": explanation,
+        "strengths": strengths,
+        "improvement": improvement,
+        "next_step": f"Review the career pathways for {course_title}, then compare it with {alternative_title}.",
+        "lowest_area": {
+            "label": labels.get(improvement_key, improvement_key),
+            "score": round(improvement_score, 2)
+        },
+        "score_gap": round(final_scores.get(course_key, 0) - max(
+            [score for key, score in final_scores.items() if key != course_key] or [0]
+        ), 2)
+    }
+
+
 # ------------------------------------------------------------------
 # Startup migration — creates / updates all required tables once.
 # Safe to re-run every startup (uses IF NOT EXISTS / ALTER IGNORE).
@@ -1320,6 +1378,13 @@ def recommend():
         })
 
     alignment_score = min(round(top_score), 99)
+    recommendation_summary = build_recommendation_summary(
+        winner,
+        course_metadata[winner]["title"],
+        course_metadata[runner_up]["title"],
+        scores,
+        final_scores
+    )
 
     # ── SAVE TO DATABASE ─────────────────────────────────────────
     if student_id:
@@ -1390,6 +1455,7 @@ def recommend():
         "alignment_score":          f"{alignment_score}%",
         "pathways":                 course_metadata[winner]["pathways"],
         "scores":                   final_scores,
+        "recommendation_summary":   recommendation_summary,
         "recommended_course_key":   winner,
         "alternative_course_key":   runner_up,
         "category_scores":          scores,

@@ -840,6 +840,36 @@ function displayRecommendation(result) {
   renderRecommendationExtras(result);
 }
 
+function renderRecommendationSummary(result) {
+  const box = document.getElementById("recommendationSummaryBox");
+  const summaryText = document.getElementById("recommendationSummaryText");
+  const strengthsText = document.getElementById("recommendationStrengthsText");
+  const improveText = document.getElementById("recommendationImproveText");
+  const summary = result?.recommendation_summary;
+
+  if (!box) return;
+  if (!summary) {
+    box.classList.add("hidden");
+    return;
+  }
+
+  box.classList.remove("hidden");
+  if (summaryText) {
+    summaryText.textContent = summary.explanation || "AcadSync found this course as your strongest match.";
+  }
+  if (strengthsText) {
+    const strengths = (summary.strengths || [])
+      .map((item) => `${item.label} (${Math.round(Number(item.score) || 0)}%)`)
+      .join(", ");
+    strengthsText.textContent = strengths || "Your profile and quiz answers";
+  }
+  if (improveText) {
+    improveText.textContent = summary.lowest_area
+      ? `${summary.lowest_area.label} (${Math.round(Number(summary.lowest_area.score) || 0)}%)`
+      : "Complete more assessment sections";
+  }
+}
+
 function updateConfidenceLabel(alignmentScore) {
   const label = document.getElementById("ai-confidence-label");
   if (!label) return;
@@ -871,6 +901,7 @@ function renderRecommendationExtras(result) {
     if (comparisonEl) {
       comparisonEl.textContent = "Your top course and alternative will appear here.";
     }
+    renderRecommendationSummary(null);
     return;
   }
 
@@ -925,6 +956,8 @@ function renderRecommendationExtras(result) {
       )
       .join("");
   }
+
+  renderRecommendationSummary(result);
 }
 
 function buildResultSummaryText(result) {
@@ -937,6 +970,12 @@ function buildResultSummaryText(result) {
     `Top recommendation: ${result.recommended_course_title}`,
     `Alternative recommendation: ${result.alternative_course_title}`,
     `Course match: ${result.alignment_score}`,
+    result.recommendation_summary?.explanation
+      ? `Why this fits: ${result.recommendation_summary.explanation}`
+      : "",
+    result.recommendation_summary?.improvement
+      ? `Improvement note: ${result.recommendation_summary.improvement}`
+      : "",
     "",
     "Suggested Career Pathways:",
     pathways || "- No pathways listed",
