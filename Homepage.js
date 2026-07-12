@@ -202,20 +202,38 @@ refreshSessionProfile();
 updateProfileCompletion();
 
 function updateProfileCompletion(hasQuizHistory) {
-  const checks = [
-    Boolean(sessionStorage.getItem("studentName")),
-    Boolean(sessionStorage.getItem("studentStrand")),
-    Boolean(sessionStorage.getItem("studentSection")),
-    Boolean(sessionStorage.getItem("studentProfilePicture")),
-  ];
-
   if (typeof hasQuizHistory === "boolean") {
     sessionStorage.setItem("studentHasQuizHistory", hasQuizHistory ? "1" : "0");
   }
-  checks.push(sessionStorage.getItem("studentHasQuizHistory") === "1");
 
-  const completed = checks.filter(Boolean).length;
-  const percent = Math.round((completed / checks.length) * 100);
+  const completionItems = [
+    {
+      label: "name",
+      complete: Boolean(sessionStorage.getItem("studentName")),
+    },
+    {
+      label: "strand",
+      complete: Boolean(sessionStorage.getItem("studentStrand")),
+    },
+    {
+      label: "section",
+      complete: Boolean(sessionStorage.getItem("studentSection")),
+    },
+    {
+      label: "profile picture",
+      complete: Boolean(sessionStorage.getItem("studentProfilePicture")),
+    },
+    {
+      label: "assessment history",
+      complete: sessionStorage.getItem("studentHasQuizHistory") === "1",
+    },
+  ];
+
+  const completed = completionItems.filter((item) => item.complete).length;
+  const missingItems = completionItems
+    .filter((item) => !item.complete)
+    .map((item) => item.label);
+  const percent = Math.round((completed / completionItems.length) * 100);
   const textEl = document.getElementById("profileCompletionText");
   const hintEl = document.getElementById("profileCompletionHint");
   const fillEl = document.getElementById("profileCompletionFill");
@@ -226,7 +244,7 @@ function updateProfileCompletion(hasQuizHistory) {
     hintEl.textContent =
       percent === 100
         ? "Great job. Your profile and assessment history are complete."
-        : "Add your section, profile picture, and assessment history for a richer profile.";
+        : `Missing: ${missingItems.join(", ")}. Complete these for a richer profile.`;
   }
 }
 
