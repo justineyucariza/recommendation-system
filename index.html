@@ -569,11 +569,14 @@
             const data = await res.json();
 
             if (data.success) {
-                alert(data.emailNotice
-                    ? `Account created! You can now sign in.\n\n${data.emailNotice}`
-                    : "Account created! You can now sign in.");
                 login();
                 document.getElementById("login-email").value = email;
+                document.getElementById("login-password").value = "";
+                showFormMessage(
+                    document.getElementById("login-error"),
+                    "Account created! You can now sign in.",
+                    "success"
+                );
             } else {
                 const message = res.status === 409
                     ? "This email is already registered. Please log in or use another email."

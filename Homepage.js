@@ -216,10 +216,6 @@ function updateProfileCompletion(hasQuizHistory) {
       complete: Boolean(sessionStorage.getItem("studentStrand")),
     },
     {
-      label: "section",
-      complete: Boolean(sessionStorage.getItem("studentSection")),
-    },
-    {
       label: "profile picture",
       complete: Boolean(sessionStorage.getItem("studentProfilePicture")),
     },
