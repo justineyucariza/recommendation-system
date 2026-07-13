@@ -577,10 +577,24 @@ def run_startup_migrations():
                 title        VARCHAR(150) NOT NULL,
                 message      TEXT NOT NULL,
                 content_type VARCHAR(40) NOT NULL DEFAULT 'announcement',
+                image_url    VARCHAR(500) DEFAULT NULL,
+                link_url     VARCHAR(500) DEFAULT NULL,
                 is_active    TINYINT(1) NOT NULL DEFAULT 1,
                 created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
+
+        try:
+            cur.execute("ALTER TABLE featured_content ADD COLUMN image_url VARCHAR(500) DEFAULT NULL")
+        except Error as e:
+            if "Duplicate column" not in str(e):
+                print(f"[MIGRATION] featured image_url column: {e}")
+
+        try:
+            cur.execute("ALTER TABLE featured_content ADD COLUMN link_url VARCHAR(500) DEFAULT NULL")
+        except Error as e:
+            if "Duplicate column" not in str(e):
+                print(f"[MIGRATION] featured link_url column: {e}")
 
         # admins - separate login accounts for system managers
         cur.execute("""
@@ -1183,7 +1197,7 @@ def featured_content():
     try:
         cursor = conn.cursor(dictionary=True)
         cursor.execute("""
-            SELECT id, title, message, content_type, created_at
+            SELECT id, title, message, content_type, image_url, link_url, created_at
             FROM featured_content
             WHERE is_active = 1
             ORDER BY created_at DESC, id DESC
@@ -1206,6 +1220,8 @@ def featured_content():
             "title": item["title"],
             "message": item["message"],
             "content_type": item["content_type"],
+            "image_url": item.get("image_url") or "",
+            "link_url": item.get("link_url") or "",
             "created_at": item["created_at"].isoformat(sep=" ") if item["created_at"] else ""
         }
     })
@@ -1337,7 +1353,7 @@ def admin_dashboard():
         courses = cursor.fetchall()
 
         cursor.execute("""
-            SELECT id, title, message, content_type, is_active, created_at
+            SELECT id, title, message, content_type, image_url, link_url, is_active, created_at
             FROM featured_content
             ORDER BY created_at DESC, id DESC
             LIMIT 20
@@ -1475,6 +1491,8 @@ def admin_dashboard():
                 "title": row["title"],
                 "message": row["message"],
                 "content_type": row["content_type"],
+                "image_url": row.get("image_url") or "",
+                "link_url": row.get("link_url") or "",
                 "is_active": bool(row.get("is_active", 1)),
                 "created_at": as_iso(row.get("created_at"))
             }
@@ -1541,6 +1559,8 @@ def admin_create_featured_content():
     title = data.get("title", "").strip()
     message = data.get("message", "").strip()
     content_type = data.get("content_type", "announcement").strip() or "announcement"
+    image_url = data.get("image_url", "").strip()
+    link_url = data.get("link_url", "").strip()
     allowed_types = {"announcement", "important_update", "highlighted_course"}
 
     if not title or not message:
@@ -1549,6 +1569,10 @@ def admin_create_featured_content():
     if content_type not in allowed_types:
         return jsonify({"success": False, "message": "Invalid featured content type."}), 400
 
+    for field_name, url_value in (("Image URL", image_url), ("Link URL", link_url)):
+        if url_value and not url_value.lower().startswith(("http://", "https://")):
+            return jsonify({"success": False, "message": f"{field_name} must start with http:// or https://."}), 400
+
     conn = get_db()
     if not conn:
         return jsonify({"success": False, "message": "Database connection failed."}), 500
@@ -1556,9 +1580,9 @@ def admin_create_featured_content():
     try:
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO featured_content (title, message, content_type, is_active)
-            VALUES (%s, %s, %s, 1)
-        """, (title, message, content_type))
+            INSERT INTO featured_content (title, message, content_type, image_url, link_url, is_active)
+            VALUES (%s, %s, %s, %s, %s, 1)
+        """, (title, message, content_type, image_url or None, link_url or None))
         conn.commit()
         return jsonify({"success": True, "message": "Featured content published.", "id": cursor.lastrowid})
     except Error as e:

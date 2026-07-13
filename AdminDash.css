@@ -416,7 +416,26 @@ input {
 }
 
 .featured-form {
-    grid-template-columns: minmax(160px, .75fr) minmax(160px, .55fr) minmax(260px, 1.4fr) auto;
+    grid-template-columns: minmax(160px, .85fr) minmax(160px, .55fr) minmax(160px, .75fr) minmax(160px, .75fr) auto;
+}
+
+.featured-form textarea {
+    grid-column: 1 / -2;
+}
+
+.content-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+    color: var(--brand-700);
+    font-size: .72rem;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.content-meta:empty {
+    display: none;
 }
 
 .table-wrap {
@@ -1254,6 +1273,10 @@ body.admin-dark .settings-message.error {
 
     .featured-form {
         grid-template-columns: 1fr;
+    }
+
+    .featured-form textarea {
+        grid-column: 1;
     }
 
     .settings-grid {

@@ -6,7 +6,7 @@
     <title>AcadSync Admin Dashboard</title>
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <link rel="icon" href="Acadsync.jpg">
-    <link rel="stylesheet" href="AdminDash.css?v=20260713-featured">
+    <link rel="stylesheet" href="AdminDash.css?v=20260713-announcement-media">
 </head>
 <body>
     <div class="admin-lock hidden" id="adminLock">
@@ -296,6 +296,8 @@
                                 <option value="important_update">Important Update</option>
                                 <option value="highlighted_course">Highlighted Course</option>
                             </select>
+                            <input name="image_url" type="url" placeholder="Optional image URL">
+                            <input name="link_url" type="url" placeholder="Optional link URL">
                             <textarea name="message" placeholder="Write the announcement students will see..." required></textarea>
                             <button class="btn primary" type="submit"><i class="bx bx-send"></i> Publish</button>
                         </form>
@@ -705,6 +707,15 @@
                 .replace(/\b\w/g, (letter) => letter.toUpperCase());
         }
 
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+
         function renderFeaturedContent(items) {
             els.featuredCountPill.textContent = `${items.length} updates`;
 
@@ -717,8 +728,12 @@
                 <tr>
                     <td>
                         <div class="content-cell">
-                            <strong>${item.title}</strong>
-                            <span>${item.message}</span>
+                            <strong>${escapeHtml(item.title)}</strong>
+                            <span>${escapeHtml(item.message)}</span>
+                            <small class="content-meta">
+                                ${item.image_url ? "<i class=\"bx bx-image\"></i> Image" : ""}
+                                ${item.link_url ? "<i class=\"bx bx-link-external\"></i> Link" : ""}
+                            </small>
                         </div>
                     </td>
                     <td><span class="pill">${formatContentType(item.content_type)}</span></td>

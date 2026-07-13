@@ -212,21 +212,65 @@ async function loadFeaturedContent() {
   const card = document.getElementById("featuredContentCard");
   if (!card) return;
 
+  const typeEl = document.getElementById("featuredContentType");
+  const titleEl = document.getElementById("featuredContentTitle");
+  const messageEl = document.getElementById("featuredContentMessage");
+  const imageEl = document.getElementById("featuredContentImage");
+  const linkEl = document.getElementById("featuredContentLink");
+
+  const showEmptyFeaturedContent = () => {
+    typeEl.textContent = "Featured Content";
+    titleEl.textContent = "No announcements yet";
+    messageEl.textContent = "Important updates from AcadSync will appear here once an admin publishes them.";
+    if (imageEl) {
+      imageEl.classList.add("hidden");
+      imageEl.removeAttribute("src");
+      imageEl.alt = "";
+    }
+    if (linkEl) {
+      linkEl.classList.add("hidden");
+      linkEl.removeAttribute("href");
+    }
+    card.classList.add("featured-content-empty");
+    card.classList.remove("hidden");
+  };
+
   try {
     const response = await fetch(`${API_BASE}/api/featured-content`);
     const data = await response.json();
     if (!response.ok || !data.success || !data.featured_content) {
-      card.classList.add("hidden");
+      showEmptyFeaturedContent();
       return;
     }
 
     const item = data.featured_content;
-    document.getElementById("featuredContentType").textContent = formatFeaturedType(item.content_type);
-    document.getElementById("featuredContentTitle").textContent = item.title || "Announcement";
-    document.getElementById("featuredContentMessage").textContent = item.message || "";
+    typeEl.textContent = formatFeaturedType(item.content_type);
+    titleEl.textContent = item.title || "Announcement";
+    messageEl.textContent = item.message || "";
+    if (imageEl) {
+      if (item.image_url) {
+        imageEl.src = item.image_url;
+        imageEl.alt = item.title ? `${item.title} image` : "Featured content image";
+        imageEl.classList.remove("hidden");
+      } else {
+        imageEl.classList.add("hidden");
+        imageEl.removeAttribute("src");
+        imageEl.alt = "";
+      }
+    }
+    if (linkEl) {
+      if (item.link_url) {
+        linkEl.href = item.link_url;
+        linkEl.classList.remove("hidden");
+      } else {
+        linkEl.classList.add("hidden");
+        linkEl.removeAttribute("href");
+      }
+    }
+    card.classList.remove("featured-content-empty");
     card.classList.remove("hidden");
   } catch (err) {
-    card.classList.add("hidden");
+    showEmptyFeaturedContent();
   }
 }
 
