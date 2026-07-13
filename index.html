@@ -33,13 +33,13 @@
         <div class="login-container" id="login">
 
             <div class="top">
-                <span>Don't have an account?
+                <span id="loginSwitchText">Don't have an account?
                     <a href="#" onclick="register()">Sign Up</a>
                 </span>
-                <header>Login</header>
+                <header id="loginHeader">Login</header>
             </div>
 
-            <div class="input-box">
+            <div class="input-box" id="loginEmailBox">
                 <input type="email" id="login-email" class="input-field" placeholder="Email" required>
                 <i class="bx bx-envelope"></i>
             </div>
@@ -61,6 +61,8 @@
 
             <div class="login-help-row">
                 <a href="#" id="forgotPwdLink">Forgot Password?</a>
+                <a href="#" id="adminLoginLink">Admin Login</a>
+                <a href="#" id="studentLoginLink" style="display:none;">Student Login</a>
             </div>
 
         </div>
@@ -263,6 +265,8 @@
     var registerBtn   = document.getElementById("registerBtn");
     var loginForm     = document.getElementById("login");
     var registerForm  = document.getElementById("register");
+    let loginMode = "student";
+    const ADMIN_KEY_STORAGE = "acadSyncAdminKey";
 
     const API_BASE = (() => {
         const RAILWAY_API_BASE = "https://web-production-21520.up.railway.app";
@@ -283,6 +287,7 @@
     })();
     
     function login() {
+        setLoginMode("student");
         loginForm.style.left    = "4px";
         registerForm.style.right = "-520px";
         loginBtn.classList.add("white-btn");
@@ -294,6 +299,36 @@
         registerForm.style.right = "5px";
         registerBtn.classList.add("white-btn");
         loginBtn.classList.remove("white-btn");
+    }
+
+    function setLoginMode(mode) {
+        loginMode = mode;
+        const isAdmin = mode === "admin";
+        const loginHeader = document.getElementById("loginHeader");
+        const loginSwitchText = document.getElementById("loginSwitchText");
+        const loginEmailBox = document.getElementById("loginEmailBox");
+        const loginPassword = document.getElementById("login-password");
+        const forgotLink = document.getElementById("forgotPwdLink");
+        const adminLink = document.getElementById("adminLoginLink");
+        const studentLink = document.getElementById("studentLoginLink");
+        const submitBtn = document.querySelector("#login .submit");
+
+        hideFormMessage(document.getElementById("login-error"));
+        loginHeader.textContent = isAdmin ? "Admin Login" : "Login";
+        loginSwitchText.innerHTML = isAdmin
+            ? 'Return to <a href="#" onclick="setLoginMode(\'student\')">Student Login</a>'
+            : 'Don\'t have an account? <a href="#" onclick="register()">Sign Up</a>';
+        loginEmailBox.style.display = isAdmin ? "none" : "";
+        loginPassword.placeholder = isAdmin ? "Admin Key" : "Password";
+        submitBtn.value = isAdmin ? "Open Admin Dashboard" : "Sign In";
+        forgotLink.style.display = isAdmin ? "none" : "";
+        adminLink.style.display = isAdmin ? "none" : "";
+        studentLink.style.display = isAdmin ? "" : "none";
+
+        if (isAdmin) {
+            document.getElementById("login-email").value = "";
+        }
+        document.getElementById("login-password").value = "";
     }
 
     // Shared form validation keeps the registration and reset flows consistent.
@@ -380,6 +415,21 @@
         });
         forgotPwdModal.classList.remove("hidden");
     });
+
+    document.getElementById("adminLoginLink").addEventListener("click", (e) => {
+        e.preventDefault();
+        setLoginMode("admin");
+    });
+
+    document.getElementById("studentLoginLink").addEventListener("click", (e) => {
+        e.preventDefault();
+        setLoginMode("student");
+    });
+
+    if (new URLSearchParams(window.location.search).get("admin") === "1") {
+        login();
+        setLoginMode("admin");
+    }
 
     document.getElementById("closeForgotPwd").addEventListener("click", () => {
         forgotPwdModal.classList.add("hidden");
@@ -485,6 +535,33 @@
         const errEl    = document.getElementById("login-error");
 
         hideFormMessage(errEl);
+
+        if (loginMode === "admin") {
+            if (!password) {
+                showFormMessage(errEl, "Please enter the admin key.");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/admin/login`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ admin_key: password })
+                });
+                const data = await res.json();
+
+                if (!res.ok || !data.success) {
+                    showFormMessage(errEl, data.message || "Invalid admin key.");
+                    return;
+                }
+
+                sessionStorage.setItem(ADMIN_KEY_STORAGE, password);
+                window.location.href = "AdminDash.html";
+            } catch (err) {
+                showFormMessage(errEl, "Cannot connect to server. Make sure course.py is running or your Railway app is deployed.");
+            }
+            return;
+        }
 
         if (!email || !password) {
             showFormMessage(errEl, "Please enter your email and password.");

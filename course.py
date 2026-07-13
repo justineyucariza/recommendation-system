@@ -68,6 +68,7 @@ FRONTEND_FILES = {
     "index.html",
     "Homepage.html",
     "AdminDash.html",
+    "AdminDash.css",
     "course.css",
     "Homepage.css",
     "Homepage.js",
