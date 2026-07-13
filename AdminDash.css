@@ -289,6 +289,29 @@ input {
     align-items: start;
 }
 
+.view-wide {
+    grid-column: 1 / -1;
+}
+
+.is-hidden {
+    display: none !important;
+}
+
+[data-view-section]:not(.is-hidden) {
+    animation: pageIn .18s ease;
+}
+
+@keyframes pageIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .panel {
     overflow: hidden;
 }
@@ -326,7 +349,23 @@ input {
     margin-bottom: 14px;
 }
 
-.search-row input {
+.mini-form {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface-soft);
+}
+
+.mini-form .btn {
+    box-shadow: none;
+}
+
+.search-row input,
+.mini-form input {
     width: 100%;
     min-height: 42px;
     padding: 0 12px;
@@ -337,7 +376,8 @@ input {
     outline: none;
 }
 
-.search-row input:focus {
+.search-row input:focus,
+.mini-form input:focus {
     border-color: var(--brand-600);
     box-shadow: 0 0 0 4px rgba(37, 133, 86, .12);
 }
@@ -424,6 +464,50 @@ td {
     background: var(--brand-100);
     font-size: .78rem;
     font-weight: 900;
+}
+
+.pill.success {
+    color: #0f5b35;
+    background: #dff6e9;
+}
+
+.pill.danger {
+    color: #8b1a12;
+    background: #ffe4e1;
+}
+
+.row-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.mini-btn {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    color: var(--brand-800);
+    background: var(--surface);
+    font-size: .76rem;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+.mini-btn.success {
+    color: #0f5b35;
+    border-color: #b7e8cc;
+    background: #ecfbf2;
+}
+
+.mini-btn.danger {
+    color: #8b1a12;
+    border-color: #f4b8b2;
+    background: #fff2f1;
 }
 
 .rank {
@@ -732,6 +816,10 @@ td {
     .dashboard-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .mini-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 760px) {
@@ -755,7 +843,8 @@ td {
 
     .cards-grid,
     .dashboard-grid,
-    .nav-list {
+    .nav-list,
+    .mini-form {
         grid-template-columns: 1fr;
     }
 

@@ -315,22 +315,47 @@ header {
 
 .login-help-row {
     display: flex;
-    justify-content: flex-end;
-    margin-top: 12px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 14px;
     font-size: .9rem;
 }
 
 .login-help-row a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 0 10px;
+    border-radius: 8px;
     color: #fff;
     font-weight: 800;
     text-decoration: none;
+    transition: var(--speed);
 }
 
 .login-help-row a:hover,
 .login-help-row a:focus-visible {
     color: var(--brand-100);
-    text-decoration: underline;
+    background: rgba(255, 255, 255, .1);
     outline: none;
+}
+
+#adminLoginLink,
+#studentLoginLink {
+    border: 1px solid rgba(255, 255, 255, .72);
+    background: rgba(255, 255, 255, .12);
+    box-shadow: 0 10px 24px rgba(18, 61, 42, .12);
+}
+
+#adminLoginLink:hover,
+#adminLoginLink:focus-visible,
+#studentLoginLink:hover,
+#studentLoginLink:focus-visible {
+    color: var(--brand-900);
+    background: #fff;
 }
 
 .form-message {

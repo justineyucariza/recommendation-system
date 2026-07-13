@@ -531,7 +531,46 @@ def run_startup_migrations():
             if "Duplicate column" not in str(e):
                 print(f"[MIGRATION] privacy_accepted_at column: {e}")
 
-        # quiz_results — stores one row per quiz attempt
+        try:
+            cur.execute("ALTER TABLE users ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1")
+        except Error as e:
+            if "Duplicate column" not in str(e):
+                print(f"[MIGRATION] users is_active column: {e}")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS courses (
+                course_id    INT AUTO_INCREMENT PRIMARY KEY,
+                course_code  VARCHAR(20) UNIQUE NOT NULL,
+                course_title VARCHAR(150) NOT NULL,
+                is_active    TINYINT(1) NOT NULL DEFAULT 1,
+                created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        try:
+            cur.execute("ALTER TABLE courses ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1")
+        except Error as e:
+            if "Duplicate column" not in str(e):
+                print(f"[MIGRATION] courses is_active column: {e}")
+
+        try:
+            cur.execute("ALTER TABLE courses ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+        except Error as e:
+            if "Duplicate column" not in str(e):
+                print(f"[MIGRATION] courses created_at column: {e}")
+
+        cur.executemany("""
+            INSERT IGNORE INTO courses (course_code, course_title, is_active)
+            VALUES (%s, %s, 1)
+        """, [
+            ("IT", "Bachelor of Science in Information Technology (BSIT)"),
+            ("MARKETING", "Bachelor of Science in Marketing Management (BSMM)"),
+            ("TOURISM", "Bachelor of Science in Tourism Management (BSTM)"),
+            ("BEED", "Bachelor of Elementary Education (BEED)"),
+            ("BSED", "Bachelor of Secondary Education (BSED)"),
+            ("CRIM", "Bachelor of Science in Criminology (BSCRIM)")
+        ])
+
         # admins - separate login accounts for system managers
         cur.execute("""
             CREATE TABLE IF NOT EXISTS admins (
@@ -555,6 +594,11 @@ def run_startup_migrations():
         except Error as e:
             if "Duplicate column" not in str(e):
                 print(f"[MIGRATION] admins role column: {e}")
+
+        try:
+            cur.execute("ALTER TABLE admins MODIFY COLUMN role VARCHAR(30) NOT NULL DEFAULT 'admin'")
+        except Error as e:
+            print(f"[MIGRATION] admins role type: {e}")
 
         try:
             cur.execute("ALTER TABLE admins ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
@@ -732,6 +776,7 @@ def login():
                    u.password,
                    u.section,
                    u.profile_picture,
+                   u.is_active,
                    s.strand_name
             FROM   users u
                  LEFT JOIN strands s ON u.strand_id = s.strand_id
@@ -743,6 +788,9 @@ def login():
 
     if not user or not verify_password(user["password"], password):
         return jsonify({"success": False, "message": "Invalid email or password."}), 401
+
+    if not user.get("is_active", 1):
+        return jsonify({"success": False, "message": "This account is deactivated. Please contact an admin."}), 403
 
     return jsonify({
         "success":   True,
@@ -1217,6 +1265,7 @@ def admin_dashboard():
                 u.email,
                 u.section,
                 u.profile_picture,
+                u.is_active,
                 u.created_at,
                 COALESCE(s.strand_name, '') AS strand_name,
                 COUNT(qr.id) AS attempts,
@@ -1226,11 +1275,18 @@ def admin_dashboard():
             LEFT JOIN quiz_results qr ON qr.studentID = u.studentID
             GROUP BY
                 u.studentID, u.first_name, u.last_name, u.email, u.section,
-                u.profile_picture, u.created_at, s.strand_name
+                u.profile_picture, u.is_active, u.created_at, s.strand_name
             ORDER BY u.created_at DESC, u.studentID DESC
-            LIMIT 12
+            LIMIT 100
         """)
         recent_students = cursor.fetchall()
+
+        cursor.execute("""
+            SELECT course_id, course_code, course_title, is_active, created_at
+            FROM courses
+            ORDER BY course_title ASC, course_code ASC
+        """)
+        courses = cursor.fetchall()
 
         cursor.execute("""
             SELECT
@@ -1313,6 +1369,7 @@ def admin_dashboard():
                 "section": row["section"] or "",
                 "strand": row["strand_name"] or "",
                 "attempts": row["attempts"] or 0,
+                "is_active": bool(row.get("is_active", 1)),
                 "profilePictureUrl": profile_picture_path(row["profile_picture"]),
                 "created_at": as_iso(row["created_at"]),
                 "last_attempt_at": as_iso(row["last_attempt_at"])
@@ -1345,8 +1402,202 @@ def admin_dashboard():
                 "best_time": time_display(row["best_time"])
             }
             for index, row in enumerate(top_students, start=1)
+        ],
+        "courses": [
+            {
+                "course_id": row["course_id"],
+                "course_code": row["course_code"],
+                "course_title": row["course_title"],
+                "is_active": bool(row.get("is_active", 1)),
+                "created_at": as_iso(row.get("created_at"))
+            }
+            for row in courses
         ]
     })
+
+
+@app.route('/api/admin/users', methods=['POST'])
+def admin_create_user():
+    admin, auth_error = require_admin_user()
+    if auth_error:
+        return auth_error
+
+    data = request.get_json() or {}
+    firstname = data.get('firstname', '').strip()
+    lastname = data.get('lastname', '').strip()
+    email = data.get('email', '').strip()
+    password = data.get('password', '').strip()
+    strand = data.get('strand', '').strip()
+    section = data.get('section', '').strip()
+
+    if not all([firstname, lastname, email, password, strand]):
+        return jsonify({"success": False, "message": "First name, last name, email, password, and strand are required."}), 400
+
+    if not is_valid_email(email):
+        return jsonify({"success": False, "message": "Please enter a valid email address."}), 400
+
+    password_errors = password_validation_errors(password)
+    if password_errors:
+        return jsonify({"success": False, "message": password_requirements_message(password_errors)}), 400
+
+    conn = get_db()
+    if not conn:
+        return jsonify({"success": False, "message": "Database connection failed."}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT studentID FROM users WHERE email = %s", (email,))
+        if cursor.fetchone():
+            return jsonify({"success": False, "message": "This email is already registered."}), 409
+
+        strand_id = get_or_create_strand_id(cursor, strand)
+        cursor.execute("""
+            INSERT INTO users
+                (first_name, last_name, email, password, strand_id, section, profile_picture, privacy_accepted, privacy_accepted_at, is_active)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, 1, NOW(), 1)
+        """, (firstname, lastname, email, hash_password(password), strand_id, section or None, None))
+        conn.commit()
+
+        return jsonify({"success": True, "message": "Student account created.", "studentID": cursor.lastrowid})
+    except Error as e:
+        print(f"[DB ADMIN CREATE USER ERROR] {e}")
+        return jsonify({"success": False, "message": "Could not create student account."}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/admin/users/<int:student_id>', methods=['PATCH'])
+def admin_update_user(student_id):
+    admin, auth_error = require_admin_user()
+    if auth_error:
+        return auth_error
+
+    data = request.get_json() or {}
+    allowed_fields = []
+    values = []
+
+    if 'section' in data:
+        allowed_fields.append("section = %s")
+        values.append(str(data.get('section') or '').strip() or None)
+
+    if 'strand' in data:
+        strand = str(data.get('strand') or '').strip()
+    else:
+        strand = None
+
+    if 'is_active' in data:
+        allowed_fields.append("is_active = %s")
+        values.append(1 if is_truthy(data.get('is_active')) else 0)
+
+    conn = get_db()
+    if not conn:
+        return jsonify({"success": False, "message": "Database connection failed."}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT studentID FROM users WHERE studentID = %s", (student_id,))
+        if not cursor.fetchone():
+            return jsonify({"success": False, "message": "Student not found."}), 404
+
+        if strand is not None:
+            if not strand:
+                return jsonify({"success": False, "message": "Strand cannot be empty."}), 400
+            strand_id = get_or_create_strand_id(cursor, strand)
+            allowed_fields.append("strand_id = %s")
+            values.append(strand_id)
+
+        if not allowed_fields:
+            return jsonify({"success": False, "message": "No user changes were provided."}), 400
+
+        values.append(student_id)
+        cursor.execute(f"UPDATE users SET {', '.join(allowed_fields)} WHERE studentID = %s", tuple(values))
+        conn.commit()
+        return jsonify({"success": True, "message": "Student account updated."})
+    except Error as e:
+        print(f"[DB ADMIN UPDATE USER ERROR] {e}")
+        return jsonify({"success": False, "message": "Could not update student account."}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/admin/courses', methods=['POST'])
+def admin_create_course():
+    admin, auth_error = require_admin_user()
+    if auth_error:
+        return auth_error
+
+    data = request.get_json() or {}
+    course_code = data.get('course_code', '').strip().upper()
+    course_title = data.get('course_title', '').strip()
+
+    if not course_code or not course_title:
+        return jsonify({"success": False, "message": "Course code and title are required."}), 400
+
+    conn = get_db()
+    if not conn:
+        return jsonify({"success": False, "message": "Database connection failed."}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            INSERT INTO courses (course_code, course_title, is_active)
+            VALUES (%s, %s, 1)
+        """, (course_code, course_title))
+        conn.commit()
+        return jsonify({"success": True, "message": "Course added.", "course_id": cursor.lastrowid})
+    except Error as e:
+        if "Duplicate" in str(e):
+            return jsonify({"success": False, "message": "Course code already exists."}), 409
+        print(f"[DB ADMIN CREATE COURSE ERROR] {e}")
+        return jsonify({"success": False, "message": "Could not add course."}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/admin/courses/<int:course_id>', methods=['PATCH'])
+def admin_update_course(course_id):
+    admin, auth_error = require_admin_user()
+    if auth_error:
+        return auth_error
+
+    data = request.get_json() or {}
+    fields = []
+    values = []
+
+    if 'course_title' in data:
+        course_title = str(data.get('course_title') or '').strip()
+        if not course_title:
+            return jsonify({"success": False, "message": "Course title cannot be empty."}), 400
+        fields.append("course_title = %s")
+        values.append(course_title)
+
+    if 'is_active' in data:
+        fields.append("is_active = %s")
+        values.append(1 if is_truthy(data.get('is_active')) else 0)
+
+    if not fields:
+        return jsonify({"success": False, "message": "No course changes were provided."}), 400
+
+    conn = get_db()
+    if not conn:
+        return jsonify({"success": False, "message": "Database connection failed."}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT course_id FROM courses WHERE course_id = %s", (course_id,))
+        if not cursor.fetchone():
+            return jsonify({"success": False, "message": "Course not found."}), 404
+
+        values.append(course_id)
+        cursor.execute(f"UPDATE courses SET {', '.join(fields)} WHERE course_id = %s", tuple(values))
+        conn.commit()
+
+        return jsonify({"success": True, "message": "Course updated."})
+    except Error as e:
+        print(f"[DB ADMIN UPDATE COURSE ERROR] {e}")
+        return jsonify({"success": False, "message": "Could not update course."}), 500
+    finally:
+        conn.close()
 
 
 @app.route('/api/profile/<int:student_id>', methods=['GET'])
