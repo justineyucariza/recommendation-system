@@ -612,6 +612,29 @@ body.admin-dark .sidebar {
     background: linear-gradient(180deg, #04130d, #082116);
 }
 
+body.admin-dark .eyebrow,
+body.admin-dark .panel-title i,
+body.admin-dark .score {
+    color: #59d492;
+}
+
+body.admin-dark .admin-identity {
+    color: #bcf4d1;
+    background: rgba(52, 164, 109, .2);
+}
+
+body.admin-dark .stat-icon {
+    color: #bcf4d1;
+    background: rgba(52, 164, 109, .22);
+    border: 1px solid rgba(89, 212, 146, .25);
+}
+
+body.admin-dark .stat-icon i,
+body.admin-dark .panel-title i,
+body.admin-dark .eyebrow i {
+    color: inherit;
+}
+
 body.admin-dark .btn {
     background: #12281d;
 }
