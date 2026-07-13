@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="AdminDash.css">
 </head>
 <body>
-    <div class="admin-lock" id="adminLock">
+    <div class="admin-lock hidden" id="adminLock">
         <form class="admin-lock-card" id="adminLoginForm">
             <div class="admin-lock-icon"><i class="bx bx-lock-alt"></i></div>
             <h2>Admin Access</h2>
@@ -21,9 +21,21 @@
             <div class="admin-lock-error" id="adminLoginError"></div>
             <div class="admin-lock-actions">
                 <button class="btn primary" type="submit"><i class="bx bx-log-in"></i> Unlock</button>
-                <a class="btn" href="index.html"><i class="bx bx-arrow-back"></i> Back</a>
+                <a class="btn" href="index.html" data-confirm-exit="index.html"><i class="bx bx-arrow-back"></i> Back</a>
             </div>
         </form>
+    </div>
+
+    <div class="confirm-exit-overlay hidden" id="confirmExitModal" role="dialog" aria-modal="true" aria-labelledby="confirmExitTitle">
+        <div class="confirm-exit-card">
+            <div class="confirm-exit-icon"><i class="bx bx-log-out"></i></div>
+            <h2 id="confirmExitTitle">Leave Admin Dashboard?</h2>
+            <p>Make sure any monitoring work is finished before leaving this admin page.</p>
+            <div class="confirm-exit-actions">
+                <button class="btn" id="cancelExitBtn" type="button"><i class="bx bx-x"></i> Stay</button>
+                <button class="btn danger" id="confirmExitBtn" type="button"><i class="bx bx-check"></i> Leave</button>
+            </div>
+        </div>
     </div>
 
     <div class="admin-shell">
@@ -40,7 +52,7 @@
                 <button class="nav-item active" type="button" data-scroll="overview"><i class="bx bx-grid-alt"></i> Overview</button>
                 <button class="nav-item" type="button" data-scroll="students"><i class="bx bx-user"></i> Students</button>
                 <button class="nav-item" type="button" data-scroll="attempts"><i class="bx bx-list-check"></i> Attempts</button>
-                <a class="sidebar-link" href="Homepage.html"><i class="bx bx-home"></i> Student View</a>
+                <a class="sidebar-link" href="Homepage.html" data-confirm-exit="Homepage.html"><i class="bx bx-home"></i> Student View</a>
             </nav>
 
             <div class="sidebar-note">
@@ -54,11 +66,12 @@
                     <div class="eyebrow"><i class="bx bx-line-chart"></i> Live Academic Snapshot</div>
                     <h2>Admin Dashboard</h2>
                     <p>Track AcadSync usage, student activity, and recommendation trends.</p>
+                    <span class="admin-identity" id="adminIdentity">Signed in as admin</span>
                 </div>
                 <div class="actions">
                     <button class="btn primary" id="refreshBtn" type="button"><i class="bx bx-refresh"></i> Refresh</button>
                     <button class="btn" id="adminLogoutBtn" type="button"><i class="bx bx-lock"></i> Lock</button>
-                    <a class="btn" href="index.html"><i class="bx bx-log-out"></i> Exit</a>
+                    <a class="btn" href="index.html" data-confirm-exit="index.html"><i class="bx bx-log-out"></i> Exit</a>
                 </div>
             </header>
 
@@ -183,8 +196,10 @@
             }
             return "";
         })();
-        const ADMIN_KEY_STORAGE = "acadSyncAdminKey";
+        const ADMIN_TOKEN_STORAGE = "acadSyncAdminToken";
+        const ADMIN_PROFILE_STORAGE = "acadSyncAdminProfile";
         let dashboardData = null;
+        let pendingExitTarget = "";
 
         const els = {
             adminLock: document.getElementById("adminLock"),
@@ -192,6 +207,10 @@
             adminKeyInput: document.getElementById("adminKeyInput"),
             adminLoginError: document.getElementById("adminLoginError"),
             adminLogoutBtn: document.getElementById("adminLogoutBtn"),
+            confirmExitModal: document.getElementById("confirmExitModal"),
+            cancelExitBtn: document.getElementById("cancelExitBtn"),
+            confirmExitBtn: document.getElementById("confirmExitBtn"),
+            adminIdentity: document.getElementById("adminIdentity"),
             statusLine: document.getElementById("statusLine"),
             totalStudents: document.getElementById("totalStudents"),
             totalAttempts: document.getElementById("totalAttempts"),
@@ -208,27 +227,40 @@
             refreshBtn: document.getElementById("refreshBtn"),
         };
 
-        function getAdminKey() {
-            return sessionStorage.getItem(ADMIN_KEY_STORAGE) || "";
+        function getAdminToken() {
+            return sessionStorage.getItem(ADMIN_TOKEN_STORAGE) || "";
         }
 
-        function setAdminKey(value) {
-            sessionStorage.setItem(ADMIN_KEY_STORAGE, value);
+        function setAdminToken(value) {
+            sessionStorage.setItem(ADMIN_TOKEN_STORAGE, value);
         }
 
-        function clearAdminKey() {
-            sessionStorage.removeItem(ADMIN_KEY_STORAGE);
+        function clearAdminSession() {
+            sessionStorage.removeItem(ADMIN_TOKEN_STORAGE);
+            sessionStorage.removeItem(ADMIN_PROFILE_STORAGE);
+        }
+
+        function setAdminProfile(profile) {
+            sessionStorage.setItem(ADMIN_PROFILE_STORAGE, JSON.stringify(profile || {}));
+            renderAdminIdentity(profile);
+        }
+
+        function getAdminProfile() {
+            try {
+                return JSON.parse(sessionStorage.getItem(ADMIN_PROFILE_STORAGE) || "{}");
+            } catch (error) {
+                return {};
+            }
+        }
+
+        function renderAdminIdentity(profile = getAdminProfile()) {
+            const name = profile.full_name || profile.username || "Admin";
+            const role = profile.role === "super_admin" ? "Super Admin" : "Admin";
+            els.adminIdentity.textContent = `Signed in as ${name} (${role})`;
         }
 
         function showAdminLock(message = "") {
-            if (!message || /admin key|invalid|configured|access/i.test(message)) {
-                window.location.href = "index.html?admin=1";
-                return;
-            }
-            els.adminLock.classList.remove("hidden");
-            els.adminLoginError.textContent = message;
-            els.adminLoginError.classList.toggle("show", Boolean(message));
-            setTimeout(() => els.adminKeyInput.focus(), 50);
+            window.location.href = "index.html?admin=1";
         }
 
         function hideAdminLock() {
@@ -236,17 +268,29 @@
             els.adminLoginError.classList.remove("show");
         }
 
-        async function verifyAdminKey(adminKey) {
+        function openExitConfirm(target) {
+            pendingExitTarget = target || "index.html";
+            els.confirmExitModal.classList.remove("hidden");
+            setTimeout(() => els.cancelExitBtn.focus(), 50);
+        }
+
+        function closeExitConfirm() {
+            pendingExitTarget = "";
+            els.confirmExitModal.classList.add("hidden");
+        }
+
+        async function verifyAdminLogin(username, password) {
             const response = await fetch(`${API_BASE}/api/admin/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ admin_key: adminKey }),
+                body: JSON.stringify({ username, password }),
             });
             const data = await response.json();
 
             if (!response.ok || !data.success) {
-                throw new Error(data.message || "Invalid admin key.");
+                throw new Error(data.message || "Invalid admin username or password.");
             }
+            return data;
         }
 
         function formatDate(value) {
@@ -399,8 +443,8 @@
         }
 
         async function loadDashboard() {
-            const adminKey = getAdminKey();
-            if (!adminKey) {
+            const adminToken = getAdminToken();
+            if (!adminToken) {
                 showAdminLock();
                 return;
             }
@@ -410,7 +454,7 @@
 
             try {
                 const response = await fetch(`${API_BASE}/api/admin/dashboard`, {
-                    headers: { "X-Admin-Key": adminKey },
+                    headers: { "X-Admin-Token": adminToken },
                 });
                 const data = await response.json();
 
@@ -419,10 +463,11 @@
                 }
 
                 renderDashboard(data);
+                if (data.admin) setAdminProfile(data.admin);
                 els.statusLine.textContent = `Updated ${new Date().toLocaleString()}`;
             } catch (error) {
-                if (/admin key|admin access|invalid/i.test(error.message || "")) {
-                    clearAdminKey();
+                if (/admin login|required|invalid/i.test(error.message || "")) {
+                    clearAdminSession();
                     showAdminLock(error.message);
                 }
                 els.statusLine.textContent = error.message || "Could not load dashboard.";
@@ -438,10 +483,10 @@
 
         els.adminLoginForm.addEventListener("submit", async (event) => {
             event.preventDefault();
-            const adminKey = els.adminKeyInput.value.trim();
+            const adminPassword = els.adminKeyInput.value.trim();
 
-            if (!adminKey) {
-                showAdminLock("Please enter the admin key.");
+            if (!adminPassword) {
+                showAdminLock("Please sign in from the admin login page.");
                 return;
             }
 
@@ -449,21 +494,47 @@
             els.adminLoginForm.querySelector("button[type='submit']").disabled = true;
 
             try {
-                await verifyAdminKey(adminKey);
-                setAdminKey(adminKey);
+                const data = await verifyAdminLogin("", adminPassword);
+                setAdminToken(data.admin_token || "");
+                setAdminProfile(data.admin || {});
                 els.adminKeyInput.value = "";
                 hideAdminLock();
                 await loadDashboard();
             } catch (error) {
-                showAdminLock(error.message || "Invalid admin key.");
+                showAdminLock(error.message || "Invalid admin username or password.");
             } finally {
                 els.adminLoginForm.querySelector("button[type='submit']").disabled = false;
             }
         });
 
         els.adminLogoutBtn.addEventListener("click", () => {
-            clearAdminKey();
+            clearAdminSession();
             window.location.href = "index.html?admin=1";
+        });
+
+        document.querySelectorAll("[data-confirm-exit]").forEach((link) => {
+            link.addEventListener("click", (event) => {
+                event.preventDefault();
+                openExitConfirm(link.dataset.confirmExit || link.getAttribute("href"));
+            });
+        });
+
+        els.cancelExitBtn.addEventListener("click", closeExitConfirm);
+
+        els.confirmExitBtn.addEventListener("click", () => {
+            window.location.href = pendingExitTarget || "index.html";
+        });
+
+        els.confirmExitModal.addEventListener("click", (event) => {
+            if (event.target === els.confirmExitModal) {
+                closeExitConfirm();
+            }
+        });
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && !els.confirmExitModal.classList.contains("hidden")) {
+                closeExitConfirm();
+            }
         });
 
         document.querySelectorAll("[data-scroll]").forEach((button) => {
@@ -479,7 +550,8 @@
         });
 
         els.refreshBtn.addEventListener("click", loadDashboard);
-        if (getAdminKey()) {
+        renderAdminIdentity();
+        if (getAdminToken()) {
             hideAdminLock();
             loadDashboard();
         } else {

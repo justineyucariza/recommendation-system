@@ -5,6 +5,7 @@ import json
 import smtplib
 import secrets
 import hashlib
+import hmac
 import urllib.error
 import urllib.request
 import base64
@@ -64,6 +65,11 @@ SMTP_CONFIG = {
     "use_tls": os.environ.get("SMTP_USE_TLS", "1") != "0",
 }
 ADMIN_KEY = os.environ.get("ADMIN_KEY", "").strip()
+ADMIN_SESSION_SECRET = (
+    os.environ.get("ADMIN_SESSION_SECRET")
+    or os.environ.get("ADMIN_KEY")
+    or "acad-sync-admin-session-dev-secret"
+)
 FRONTEND_FILES = {
     "index.html",
     "Homepage.html",
@@ -94,6 +100,56 @@ def get_admin_key_from_request():
     return str(data.get("admin_key", "")).strip()
 
 
+def encode_admin_token(admin):
+    payload = {
+        "admin_id": admin["admin_id"],
+        "username": admin["username"],
+        "full_name": admin.get("full_name") or admin["username"],
+        "role": admin.get("role") or "admin",
+        "exp": int((datetime.utcnow() + timedelta(hours=12)).timestamp())
+    }
+    payload_json = json.dumps(payload, separators=(",", ":"), sort_keys=True)
+    payload_b64 = base64.urlsafe_b64encode(payload_json.encode("utf-8")).decode("ascii").rstrip("=")
+    signature = hmac.new(
+        ADMIN_SESSION_SECRET.encode("utf-8"),
+        payload_b64.encode("utf-8"),
+        hashlib.sha256
+    ).hexdigest()
+    return f"{payload_b64}.{signature}"
+
+
+def decode_admin_token(token):
+    if not token or "." not in token:
+        return None
+
+    payload_b64, signature = token.rsplit(".", 1)
+    expected_signature = hmac.new(
+        ADMIN_SESSION_SECRET.encode("utf-8"),
+        payload_b64.encode("utf-8"),
+        hashlib.sha256
+    ).hexdigest()
+    if not hmac.compare_digest(signature, expected_signature):
+        return None
+
+    try:
+        padded = payload_b64 + "=" * (-len(payload_b64) % 4)
+        payload = json.loads(base64.urlsafe_b64decode(padded.encode("ascii")).decode("utf-8"))
+    except (ValueError, json.JSONDecodeError):
+        return None
+
+    if int(payload.get("exp", 0)) < int(datetime.utcnow().timestamp()):
+        return None
+    return payload
+
+
+def get_admin_from_request():
+    token = request.headers.get("X-Admin-Token", "").strip()
+    if not token:
+        data = request.get_json(silent=True) or {}
+        token = str(data.get("admin_token", "")).strip()
+    return decode_admin_token(token)
+
+
 def require_admin_key():
     if not ADMIN_KEY:
         return jsonify({
@@ -105,6 +161,13 @@ def require_admin_key():
         return jsonify({"success": False, "message": "Invalid admin key."}), 401
 
     return None
+
+
+def require_admin_user():
+    admin = get_admin_from_request()
+    if not admin:
+        return None, (jsonify({"success": False, "message": "Admin login required."}), 401)
+    return admin, None
 
 
 def safe_float(val, default=0.0):
@@ -469,6 +532,36 @@ def run_startup_migrations():
                 print(f"[MIGRATION] privacy_accepted_at column: {e}")
 
         # quiz_results — stores one row per quiz attempt
+        # admins - separate login accounts for system managers
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS admins (
+                admin_id   INT AUTO_INCREMENT PRIMARY KEY,
+                username   VARCHAR(80) UNIQUE NOT NULL,
+                password   VARCHAR(255) NOT NULL,
+                full_name  VARCHAR(150) NOT NULL,
+                role       VARCHAR(30) NOT NULL DEFAULT 'admin',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        try:
+            cur.execute("ALTER TABLE admins ADD COLUMN full_name VARCHAR(150) NOT NULL DEFAULT ''")
+        except Error as e:
+            if "Duplicate column" not in str(e):
+                print(f"[MIGRATION] admins full_name column: {e}")
+
+        try:
+            cur.execute("ALTER TABLE admins ADD COLUMN role VARCHAR(30) NOT NULL DEFAULT 'admin'")
+        except Error as e:
+            if "Duplicate column" not in str(e):
+                print(f"[MIGRATION] admins role column: {e}")
+
+        try:
+            cur.execute("ALTER TABLE admins ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+        except Error as e:
+            if "Duplicate column" not in str(e):
+                print(f"[MIGRATION] admins created_at column: {e}")
+
         cur.execute("""
             CREATE TABLE IF NOT EXISTS quiz_results (
                 id                 INT AUTO_INCREMENT PRIMARY KEY,
@@ -1024,16 +1117,57 @@ def leaderboard():
 
 @app.route('/api/admin/login', methods=['POST'])
 def admin_login():
-    auth_error = require_admin_key()
-    if auth_error:
-        return auth_error
+    data = request.get_json() or {}
+    username = data.get("username", "").strip()
+    password = data.get("password", "").strip()
 
-    return jsonify({"success": True, "message": "Admin access granted."})
+    if not username or not password:
+        return jsonify({"success": False, "message": "Username and password are required."}), 400
+
+    conn = get_db()
+    if not conn:
+        return jsonify({"success": False, "message": "Database connection failed."}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT admin_id, username, password, full_name, role
+            FROM admins
+            WHERE username = %s
+        """, (username,))
+        admin = cursor.fetchone()
+
+        if not admin or not verify_password(admin["password"], password):
+            return jsonify({"success": False, "message": "Invalid admin username or password."}), 401
+
+        if not admin["password"].startswith(("pbkdf2:", "scrypt:")):
+            cursor.execute(
+                "UPDATE admins SET password = %s WHERE admin_id = %s",
+                (hash_password(password), admin["admin_id"])
+            )
+            conn.commit()
+
+        return jsonify({
+            "success": True,
+            "message": "Admin access granted.",
+            "admin": {
+                "admin_id": admin["admin_id"],
+                "username": admin["username"],
+                "full_name": admin["full_name"] or admin["username"],
+                "role": admin["role"] or "admin"
+            },
+            "admin_token": encode_admin_token(admin)
+        })
+    except Error as e:
+        print(f"[DB ADMIN LOGIN ERROR] {e}")
+        return jsonify({"success": False, "message": "Could not sign in as admin."}), 500
+    finally:
+        conn.close()
 
 
 @app.route('/api/admin/dashboard', methods=['GET'])
 def admin_dashboard():
-    auth_error = require_admin_key()
+    admin, auth_error = require_admin_user()
     if auth_error:
         return auth_error
 
@@ -1152,6 +1286,12 @@ def admin_dashboard():
 
     return jsonify({
         "success": True,
+        "admin": {
+            "admin_id": admin["admin_id"],
+            "username": admin["username"],
+            "full_name": admin["full_name"],
+            "role": admin["role"]
+        },
         "summary": {
             "total_students": total_students or 0,
             "total_attempts": quiz_stats.get("total_attempts") or 0,

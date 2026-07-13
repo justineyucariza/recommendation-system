@@ -266,7 +266,8 @@
     var loginForm     = document.getElementById("login");
     var registerForm  = document.getElementById("register");
     let loginMode = "student";
-    const ADMIN_KEY_STORAGE = "acadSyncAdminKey";
+    const ADMIN_TOKEN_STORAGE = "acadSyncAdminToken";
+    const ADMIN_PROFILE_STORAGE = "acadSyncAdminProfile";
 
     const API_BASE = (() => {
         const RAILWAY_API_BASE = "https://web-production-21520.up.railway.app";
@@ -307,6 +308,7 @@
         const loginHeader = document.getElementById("loginHeader");
         const loginSwitchText = document.getElementById("loginSwitchText");
         const loginEmailBox = document.getElementById("loginEmailBox");
+        const loginEmail = document.getElementById("login-email");
         const loginPassword = document.getElementById("login-password");
         const forgotLink = document.getElementById("forgotPwdLink");
         const adminLink = document.getElementById("adminLoginLink");
@@ -318,16 +320,16 @@
         loginSwitchText.innerHTML = isAdmin
             ? 'Return to <a href="#" onclick="setLoginMode(\'student\')">Student Login</a>'
             : 'Don\'t have an account? <a href="#" onclick="register()">Sign Up</a>';
-        loginEmailBox.style.display = isAdmin ? "none" : "";
-        loginPassword.placeholder = isAdmin ? "Admin Key" : "Password";
+        loginEmailBox.style.display = "";
+        loginEmail.type = isAdmin ? "text" : "email";
+        loginEmail.placeholder = isAdmin ? "Admin Username" : "Email";
+        loginPassword.placeholder = isAdmin ? "Admin Password" : "Password";
         submitBtn.value = isAdmin ? "Open Admin Dashboard" : "Sign In";
         forgotLink.style.display = isAdmin ? "none" : "";
         adminLink.style.display = isAdmin ? "none" : "";
         studentLink.style.display = isAdmin ? "" : "none";
 
-        if (isAdmin) {
-            document.getElementById("login-email").value = "";
-        }
+        document.getElementById("login-email").value = "";
         document.getElementById("login-password").value = "";
     }
 
@@ -537,8 +539,8 @@
         hideFormMessage(errEl);
 
         if (loginMode === "admin") {
-            if (!password) {
-                showFormMessage(errEl, "Please enter the admin key.");
+            if (!email || !password) {
+                showFormMessage(errEl, "Please enter your admin username and password.");
                 return;
             }
 
@@ -546,16 +548,17 @@
                 const res = await fetch(`${API_BASE}/api/admin/login`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ admin_key: password })
+                    body: JSON.stringify({ username: email, password })
                 });
                 const data = await res.json();
 
                 if (!res.ok || !data.success) {
-                    showFormMessage(errEl, data.message || "Invalid admin key.");
+                    showFormMessage(errEl, data.message || "Invalid admin username or password.");
                     return;
                 }
 
-                sessionStorage.setItem(ADMIN_KEY_STORAGE, password);
+                sessionStorage.setItem(ADMIN_TOKEN_STORAGE, data.admin_token || "");
+                sessionStorage.setItem(ADMIN_PROFILE_STORAGE, JSON.stringify(data.admin || {}));
                 window.location.href = "AdminDash.html";
             } catch (err) {
                 showFormMessage(errEl, "Cannot connect to server. Make sure course.py is running or your Railway app is deployed.");
