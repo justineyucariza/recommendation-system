@@ -28,12 +28,65 @@
 
     <div class="confirm-exit-overlay hidden" id="confirmExitModal" role="dialog" aria-modal="true" aria-labelledby="confirmExitTitle">
         <div class="confirm-exit-card">
-            <div class="confirm-exit-icon"><i class="bx bx-log-out"></i></div>
+            <button class="modal-x" id="exitCloseBtn" type="button" aria-label="Close exit confirmation"><i class="bx bx-x"></i></button>
+            <div class="confirm-exit-icon"><i class="bx bx-log-out-circle"></i></div>
+            <span class="modal-kicker">Admin session</span>
             <h2 id="confirmExitTitle">Leave Admin Dashboard?</h2>
-            <p>Make sure any monitoring work is finished before leaving this admin page.</p>
+            <p>You will return to the login page. Any unsaved typed changes in the dashboard forms will be lost.</p>
             <div class="confirm-exit-actions">
                 <button class="btn" id="cancelExitBtn" type="button"><i class="bx bx-x"></i> Stay</button>
                 <button class="btn danger" id="confirmExitBtn" type="button"><i class="bx bx-check"></i> Leave</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="settings-overlay hidden" id="adminSettingsModal" role="dialog" aria-modal="true" aria-labelledby="adminSettingsTitle">
+        <div class="settings-card">
+            <div class="settings-head">
+                <div>
+                    <span class="modal-kicker"><i class="bx bx-cog"></i> Admin settings</span>
+                    <h2 id="adminSettingsTitle">Portal Settings</h2>
+                </div>
+                <button class="modal-x" id="closeAdminSettingsBtn" type="button" aria-label="Close settings"><i class="bx bx-x"></i></button>
+            </div>
+
+            <div class="settings-body">
+                <section class="settings-section">
+                    <h3><i class="bx bx-id-card"></i> Account</h3>
+                    <div class="settings-profile">
+                        <div class="settings-avatar" id="adminSettingsAvatar">A</div>
+                        <div>
+                            <strong id="adminSettingsName">Admin</strong>
+                            <span id="adminSettingsRole">Signed in</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="settings-section">
+                    <h3><i class="bx bx-palette"></i> Display</h3>
+                    <label class="setting-toggle">
+                        <span>
+                            <strong>Compact dashboard</strong>
+                            <small>Reduce spacing for monitoring more records.</small>
+                        </span>
+                        <input type="checkbox" id="adminCompactToggle">
+                    </label>
+                </section>
+
+                <section class="settings-section">
+                    <h3><i class="bx bx-lock-alt"></i> Change Password</h3>
+                    <div class="settings-grid">
+                        <input id="adminCurrentPassword" type="password" placeholder="Current password">
+                        <input id="adminNewPassword" type="password" placeholder="New password">
+                        <input id="adminConfirmPassword" type="password" placeholder="Confirm new password">
+                    </div>
+                    <p id="adminSettingsMessage" class="settings-message hidden"></p>
+                </section>
+            </div>
+
+            <div class="settings-actions">
+                <button class="btn" id="cancelAdminSettingsBtn" type="button"><i class="bx bx-x"></i> Cancel</button>
+                <button class="btn primary" id="saveAdminSettingsBtn" type="button"><i class="bx bx-save"></i> Save Settings</button>
             </div>
         </div>
     </div>
@@ -71,6 +124,7 @@
                 </div>
                 <div class="actions">
                     <button class="btn primary" id="refreshBtn" type="button"><i class="bx bx-refresh"></i> Refresh</button>
+                    <button class="btn" id="adminSettingsBtn" type="button"><i class="bx bx-cog"></i> Settings</button>
                     <button class="btn" id="adminLogoutBtn" type="button"><i class="bx bx-lock"></i> Lock</button>
                     <a class="btn" href="index.html" data-confirm-exit="index.html"><i class="bx bx-log-out"></i> Exit</a>
                 </div>
@@ -275,7 +329,21 @@
             adminKeyInput: document.getElementById("adminKeyInput"),
             adminLoginError: document.getElementById("adminLoginError"),
             adminLogoutBtn: document.getElementById("adminLogoutBtn"),
+            adminSettingsBtn: document.getElementById("adminSettingsBtn"),
+            adminSettingsModal: document.getElementById("adminSettingsModal"),
+            closeAdminSettingsBtn: document.getElementById("closeAdminSettingsBtn"),
+            cancelAdminSettingsBtn: document.getElementById("cancelAdminSettingsBtn"),
+            saveAdminSettingsBtn: document.getElementById("saveAdminSettingsBtn"),
+            adminCompactToggle: document.getElementById("adminCompactToggle"),
+            adminSettingsAvatar: document.getElementById("adminSettingsAvatar"),
+            adminSettingsName: document.getElementById("adminSettingsName"),
+            adminSettingsRole: document.getElementById("adminSettingsRole"),
+            adminCurrentPassword: document.getElementById("adminCurrentPassword"),
+            adminNewPassword: document.getElementById("adminNewPassword"),
+            adminConfirmPassword: document.getElementById("adminConfirmPassword"),
+            adminSettingsMessage: document.getElementById("adminSettingsMessage"),
             confirmExitModal: document.getElementById("confirmExitModal"),
+            exitCloseBtn: document.getElementById("exitCloseBtn"),
             cancelExitBtn: document.getElementById("cancelExitBtn"),
             confirmExitBtn: document.getElementById("confirmExitBtn"),
             adminIdentity: document.getElementById("adminIdentity"),
@@ -336,6 +404,9 @@
             const name = profile.full_name || profile.username || "Admin";
             const role = ["super_admin", "superadmin"].includes(profile.role) ? "Super Admin" : "Admin";
             els.adminIdentity.textContent = `Signed in as ${name} (${role})`;
+            els.adminSettingsName.textContent = name;
+            els.adminSettingsRole.textContent = `${role} • ${profile.username || "admin"}`;
+            els.adminSettingsAvatar.textContent = initials(name || profile.username || "Admin");
         }
 
         function showAdminLock(message = "") {
@@ -356,6 +427,30 @@
         function closeExitConfirm() {
             pendingExitTarget = "";
             els.confirmExitModal.classList.add("hidden");
+        }
+
+        function openAdminSettings() {
+            els.adminCompactToggle.checked = localStorage.getItem("acadSyncAdminCompact") === "1";
+            els.adminSettingsMessage.classList.add("hidden");
+            els.adminSettingsMessage.textContent = "";
+            els.adminCurrentPassword.value = "";
+            els.adminNewPassword.value = "";
+            els.adminConfirmPassword.value = "";
+            els.adminSettingsModal.classList.remove("hidden");
+            setTimeout(() => els.closeAdminSettingsBtn.focus(), 50);
+        }
+
+        function closeAdminSettings() {
+            els.adminSettingsModal.classList.add("hidden");
+        }
+
+        function setAdminSettingsMessage(message, type = "error") {
+            els.adminSettingsMessage.textContent = message;
+            els.adminSettingsMessage.className = `settings-message ${type}`;
+        }
+
+        function applyAdminCompactMode() {
+            document.body.classList.toggle("admin-compact", localStorage.getItem("acadSyncAdminCompact") === "1");
         }
 
         async function verifyAdminLogin(username, password) {
@@ -642,6 +737,29 @@
             return data;
         }
 
+        async function changeAdminPassword() {
+            const currentPassword = els.adminCurrentPassword.value.trim();
+            const newPassword = els.adminNewPassword.value.trim();
+            const confirmPassword = els.adminConfirmPassword.value.trim();
+
+            if (!currentPassword && !newPassword && !confirmPassword) return;
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                throw new Error("Fill in all password fields or leave them blank.");
+            }
+            if (newPassword !== confirmPassword) {
+                throw new Error("New password and confirm password do not match.");
+            }
+
+            await adminRequest("/api/admin/change-password", {
+                method: "POST",
+                body: JSON.stringify({
+                    current_password: currentPassword,
+                    new_password: newPassword,
+                    confirm_password: confirmPassword,
+                }),
+            });
+        }
+
         function getStudentById(studentId) {
             return (dashboardData?.recent_students || []).find((student) => String(student.studentID) === String(studentId));
         }
@@ -697,6 +815,25 @@
             window.location.href = "index.html?admin=1";
         });
 
+        els.adminSettingsBtn.addEventListener("click", openAdminSettings);
+        els.closeAdminSettingsBtn.addEventListener("click", closeAdminSettings);
+        els.cancelAdminSettingsBtn.addEventListener("click", closeAdminSettings);
+
+        els.saveAdminSettingsBtn.addEventListener("click", async () => {
+            els.saveAdminSettingsBtn.disabled = true;
+            try {
+                localStorage.setItem("acadSyncAdminCompact", els.adminCompactToggle.checked ? "1" : "0");
+                applyAdminCompactMode();
+                await changeAdminPassword();
+                setAdminSettingsMessage("Settings saved successfully.", "success");
+                setTimeout(closeAdminSettings, 700);
+            } catch (error) {
+                setAdminSettingsMessage(error.message || "Could not save settings.", "error");
+            } finally {
+                els.saveAdminSettingsBtn.disabled = false;
+            }
+        });
+
         document.querySelectorAll("[data-confirm-exit]").forEach((link) => {
             link.addEventListener("click", (event) => {
                 event.preventDefault();
@@ -705,6 +842,7 @@
         });
 
         els.cancelExitBtn.addEventListener("click", closeExitConfirm);
+        els.exitCloseBtn.addEventListener("click", closeExitConfirm);
 
         els.confirmExitBtn.addEventListener("click", () => {
             window.location.href = pendingExitTarget || "index.html";
@@ -716,9 +854,18 @@
             }
         });
 
+        els.adminSettingsModal.addEventListener("click", (event) => {
+            if (event.target === els.adminSettingsModal) {
+                closeAdminSettings();
+            }
+        });
+
         document.addEventListener("keydown", (event) => {
             if (event.key === "Escape" && !els.confirmExitModal.classList.contains("hidden")) {
                 closeExitConfirm();
+            }
+            if (event.key === "Escape" && !els.adminSettingsModal.classList.contains("hidden")) {
+                closeAdminSettings();
             }
         });
 
@@ -815,6 +962,7 @@
         });
 
         els.refreshBtn.addEventListener("click", loadDashboard);
+        applyAdminCompactMode();
         renderAdminIdentity();
         setActiveView(getInitialView(), { updateHash: false });
         if (getAdminToken()) {

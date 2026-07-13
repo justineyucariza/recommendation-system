@@ -1416,6 +1416,54 @@ def admin_dashboard():
     })
 
 
+@app.route('/api/admin/change-password', methods=['POST'])
+def admin_change_password():
+    admin, auth_error = require_admin_user()
+    if auth_error:
+        return auth_error
+
+    data = request.get_json() or {}
+    current_password = data.get("current_password", "").strip()
+    new_password = data.get("new_password", "").strip()
+    confirm_password = data.get("confirm_password", "").strip()
+
+    if not current_password or not new_password or not confirm_password:
+        return jsonify({"success": False, "message": "Current password, new password, and confirm password are required."}), 400
+
+    if new_password != confirm_password:
+        return jsonify({"success": False, "message": "New password and confirm password do not match."}), 400
+
+    password_errors = password_validation_errors(new_password)
+    if password_errors:
+        return jsonify({"success": False, "message": password_requirements_message(password_errors)}), 400
+
+    conn = get_db()
+    if not conn:
+        return jsonify({"success": False, "message": "Database connection failed."}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT admin_id, password FROM admins WHERE admin_id = %s", (admin["admin_id"],))
+        row = cursor.fetchone()
+        if not row:
+            return jsonify({"success": False, "message": "Admin account not found."}), 404
+
+        if not verify_password(row["password"], current_password):
+            return jsonify({"success": False, "message": "Current password is incorrect."}), 401
+
+        cursor.execute(
+            "UPDATE admins SET password = %s WHERE admin_id = %s",
+            (hash_password(new_password), admin["admin_id"])
+        )
+        conn.commit()
+        return jsonify({"success": True, "message": "Admin password updated."})
+    except Error as e:
+        print(f"[DB ADMIN CHANGE PASSWORD ERROR] {e}")
+        return jsonify({"success": False, "message": "Could not update admin password."}), 500
+    finally:
+        conn.close()
+
+
 @app.route('/api/admin/users', methods=['POST'])
 def admin_create_user():
     admin, auth_error = require_admin_user()

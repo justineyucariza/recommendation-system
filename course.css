@@ -316,7 +316,7 @@ header {
 .login-help-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     gap: 10px;
     flex-wrap: wrap;
     margin-top: 14px;
@@ -344,10 +344,22 @@ header {
 }
 
 #adminLoginLink,
-#studentLoginLink {
+.login-mode-button {
+    width: 100%;
+    min-height: 46px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 900;
+    text-decoration: none;
     border: 1px solid rgba(255, 255, 255, .72);
     background: rgba(255, 255, 255, .12);
     box-shadow: 0 10px 24px rgba(18, 61, 42, .12);
+    transition: var(--speed);
 }
 
 #adminLoginLink:hover,
