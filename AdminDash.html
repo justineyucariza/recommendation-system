@@ -31,11 +31,11 @@
             <button class="modal-x" id="exitCloseBtn" type="button" aria-label="Close exit confirmation"><i class="bx bx-x"></i></button>
             <div class="confirm-exit-icon"><i class="bx bx-log-out-circle"></i></div>
             <span class="modal-kicker">Admin session</span>
-            <h2 id="confirmExitTitle">Leave Admin Dashboard?</h2>
+            <h2 id="confirmExitTitle">Log out of Admin Dashboard?</h2>
             <p>You will return to the login page. Any unsaved typed changes in the dashboard forms will be lost.</p>
             <div class="confirm-exit-actions">
-                <button class="btn" id="cancelExitBtn" type="button"><i class="bx bx-x"></i> Stay</button>
-                <button class="btn danger" id="confirmExitBtn" type="button"><i class="bx bx-check"></i> Leave</button>
+                <button class="btn" id="cancelExitBtn" type="button"><i class="bx bx-x"></i> Cancel</button>
+                <button class="btn danger" id="confirmExitBtn" type="button"><i class="bx bx-log-out"></i> Log Out</button>
             </div>
         </div>
     </div>
@@ -64,6 +64,13 @@
 
                 <section class="settings-section">
                     <h3><i class="bx bx-palette"></i> Display</h3>
+                    <label class="setting-toggle">
+                        <span>
+                            <strong>Dark mode</strong>
+                            <small>Use a darker admin dashboard for low-light monitoring.</small>
+                        </span>
+                        <input type="checkbox" id="adminDarkModeToggle">
+                    </label>
                     <label class="setting-toggle">
                         <span>
                             <strong>Compact dashboard</strong>
@@ -338,6 +345,7 @@
             adminSettingsAvatar: document.getElementById("adminSettingsAvatar"),
             adminSettingsName: document.getElementById("adminSettingsName"),
             adminSettingsRole: document.getElementById("adminSettingsRole"),
+            adminDarkModeToggle: document.getElementById("adminDarkModeToggle"),
             adminCurrentPassword: document.getElementById("adminCurrentPassword"),
             adminNewPassword: document.getElementById("adminNewPassword"),
             adminConfirmPassword: document.getElementById("adminConfirmPassword"),
@@ -430,6 +438,7 @@
         }
 
         function openAdminSettings() {
+            els.adminDarkModeToggle.checked = localStorage.getItem("acadSyncAdminDarkMode") === "1";
             els.adminCompactToggle.checked = localStorage.getItem("acadSyncAdminCompact") === "1";
             els.adminSettingsMessage.classList.add("hidden");
             els.adminSettingsMessage.textContent = "";
@@ -451,6 +460,10 @@
 
         function applyAdminCompactMode() {
             document.body.classList.toggle("admin-compact", localStorage.getItem("acadSyncAdminCompact") === "1");
+        }
+
+        function applyAdminDarkMode() {
+            document.body.classList.toggle("admin-dark", localStorage.getItem("acadSyncAdminDarkMode") === "1");
         }
 
         async function verifyAdminLogin(username, password) {
@@ -811,8 +824,7 @@
         });
 
         els.adminLogoutBtn.addEventListener("click", () => {
-            clearAdminSession();
-            window.location.href = "index.html?admin=1";
+            openExitConfirm("index.html?admin=1");
         });
 
         els.adminSettingsBtn.addEventListener("click", openAdminSettings);
@@ -822,7 +834,9 @@
         els.saveAdminSettingsBtn.addEventListener("click", async () => {
             els.saveAdminSettingsBtn.disabled = true;
             try {
+                localStorage.setItem("acadSyncAdminDarkMode", els.adminDarkModeToggle.checked ? "1" : "0");
                 localStorage.setItem("acadSyncAdminCompact", els.adminCompactToggle.checked ? "1" : "0");
+                applyAdminDarkMode();
                 applyAdminCompactMode();
                 await changeAdminPassword();
                 setAdminSettingsMessage("Settings saved successfully.", "success");
@@ -845,6 +859,9 @@
         els.exitCloseBtn.addEventListener("click", closeExitConfirm);
 
         els.confirmExitBtn.addEventListener("click", () => {
+            if ((pendingExitTarget || "").includes("index.html")) {
+                clearAdminSession();
+            }
             window.location.href = pendingExitTarget || "index.html";
         });
 
@@ -962,6 +979,7 @@
         });
 
         els.refreshBtn.addEventListener("click", loadDashboard);
+        applyAdminDarkMode();
         applyAdminCompactMode();
         renderAdminIdentity();
         setActiveView(getInitialView(), { updateHash: false });
