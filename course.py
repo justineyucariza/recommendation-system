@@ -63,9 +63,11 @@ SMTP_CONFIG = {
     "from_email": os.environ.get("SMTP_FROM_EMAIL") or os.environ.get("SMTP_USERNAME", ""),
     "use_tls": os.environ.get("SMTP_USE_TLS", "1") != "0",
 }
+ADMIN_KEY = os.environ.get("ADMIN_KEY", "").strip()
 FRONTEND_FILES = {
     "index.html",
     "Homepage.html",
+    "AdminDash.html",
     "course.css",
     "Homepage.css",
     "Homepage.js",
@@ -81,6 +83,27 @@ def get_db():
     except Error as e:
         print(f"[DB ERROR] {e}")
         return None
+
+
+def get_admin_key_from_request():
+    header_key = request.headers.get("X-Admin-Key", "").strip()
+    if header_key:
+        return header_key
+    data = request.get_json(silent=True) or {}
+    return str(data.get("admin_key", "")).strip()
+
+
+def require_admin_key():
+    if not ADMIN_KEY:
+        return jsonify({
+            "success": False,
+            "message": "Admin access is not configured. Add ADMIN_KEY in your environment variables."
+        }), 503
+
+    if get_admin_key_from_request() != ADMIN_KEY:
+        return jsonify({"success": False, "message": "Invalid admin key."}), 401
+
+    return None
 
 
 def safe_float(val, default=0.0):
@@ -543,6 +566,11 @@ def serve_homepage_html():
     return send_from_directory(BASE_DIR, "Homepage.html")
 
 
+@app.route("/AdminDash.html")
+def serve_admin_dashboard_html():
+    return send_from_directory(BASE_DIR, "AdminDash.html")
+
+
 @app.route("/<path:filename>")
 def serve_frontend_asset(filename):
     if filename in FRONTEND_FILES:
@@ -990,6 +1018,193 @@ def leaderboard():
         "success": True,
         "leaderboard": board,
         "last_updated": last_updated.isoformat(sep=" ") if last_updated else ""
+    })
+
+
+@app.route('/api/admin/login', methods=['POST'])
+def admin_login():
+    auth_error = require_admin_key()
+    if auth_error:
+        return auth_error
+
+    return jsonify({"success": True, "message": "Admin access granted."})
+
+
+@app.route('/api/admin/dashboard', methods=['GET'])
+def admin_dashboard():
+    auth_error = require_admin_key()
+    if auth_error:
+        return auth_error
+
+    conn = get_db()
+    if not conn:
+        return jsonify({"success": False, "message": "Database connection failed."}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("SELECT COUNT(*) AS total_students FROM users")
+        total_students = (cursor.fetchone() or {}).get("total_students", 0)
+
+        cursor.execute("""
+            SELECT
+                COUNT(*) AS total_attempts,
+                COUNT(DISTINCT studentID) AS active_students,
+                AVG(total_score) AS average_score,
+                MAX(created_at) AS last_attempt_at
+            FROM quiz_results
+        """)
+        quiz_stats = cursor.fetchone() or {}
+
+        cursor.execute("""
+            SELECT COALESCE(s.strand_name, 'Unassigned') AS label, COUNT(*) AS total
+            FROM users u
+            LEFT JOIN strands s ON s.strand_id = u.strand_id
+            GROUP BY COALESCE(s.strand_name, 'Unassigned')
+            ORDER BY total DESC, label ASC
+        """)
+        strands = cursor.fetchall()
+
+        cursor.execute("""
+            SELECT COALESCE(recommended_course, 'No recommendation yet') AS label, COUNT(*) AS total
+            FROM quiz_results
+            GROUP BY COALESCE(recommended_course, 'No recommendation yet')
+            ORDER BY total DESC, label ASC
+            LIMIT 8
+        """)
+        course_distribution = cursor.fetchall()
+
+        cursor.execute("""
+            SELECT
+                u.studentID,
+                u.first_name,
+                u.last_name,
+                u.email,
+                u.section,
+                u.profile_picture,
+                u.created_at,
+                COALESCE(s.strand_name, '') AS strand_name,
+                COUNT(qr.id) AS attempts,
+                MAX(qr.created_at) AS last_attempt_at
+            FROM users u
+            LEFT JOIN strands s ON s.strand_id = u.strand_id
+            LEFT JOIN quiz_results qr ON qr.studentID = u.studentID
+            GROUP BY
+                u.studentID, u.first_name, u.last_name, u.email, u.section,
+                u.profile_picture, u.created_at, s.strand_name
+            ORDER BY u.created_at DESC, u.studentID DESC
+            LIMIT 12
+        """)
+        recent_students = cursor.fetchall()
+
+        cursor.execute("""
+            SELECT
+                qr.id,
+                qr.studentID,
+                qr.total_score,
+                qr.time_taken_seconds,
+                qr.recommended_course,
+                qr.alignment_score,
+                qr.created_at,
+                u.first_name,
+                u.last_name,
+                u.profile_picture,
+                COALESCE(s.strand_name, '') AS strand_name
+            FROM quiz_results qr
+            JOIN users u ON u.studentID = qr.studentID
+            LEFT JOIN strands s ON s.strand_id = u.strand_id
+            ORDER BY qr.created_at DESC, qr.id DESC
+            LIMIT 12
+        """)
+        recent_attempts = cursor.fetchall()
+
+        cursor.execute("""
+            SELECT
+                u.studentID,
+                u.first_name,
+                u.last_name,
+                u.profile_picture,
+                COALESCE(s.strand_name, '') AS strand_name,
+                MAX(qr.total_score) AS best_score,
+                MIN(qr.time_taken_seconds) AS best_time
+            FROM quiz_results qr
+            JOIN users u ON u.studentID = qr.studentID
+            LEFT JOIN strands s ON s.strand_id = u.strand_id
+            GROUP BY u.studentID, u.first_name, u.last_name, u.profile_picture, s.strand_name
+            ORDER BY best_score DESC, best_time ASC
+            LIMIT 5
+        """)
+        top_students = cursor.fetchall()
+
+    except Error as e:
+        print(f"[DB ADMIN DASHBOARD ERROR] {e}")
+        return jsonify({"success": False, "message": "Could not load admin dashboard."}), 500
+    finally:
+        conn.close()
+
+    def as_iso(value):
+        return value.isoformat(sep=" ") if value else ""
+
+    def time_display(seconds):
+        seconds = seconds or 0
+        return f"{seconds // 60}m {seconds % 60:02d}s"
+
+    return jsonify({
+        "success": True,
+        "summary": {
+            "total_students": total_students or 0,
+            "total_attempts": quiz_stats.get("total_attempts") or 0,
+            "active_students": quiz_stats.get("active_students") or 0,
+            "average_score": round(float(quiz_stats.get("average_score") or 0), 2),
+            "last_attempt_at": as_iso(quiz_stats.get("last_attempt_at"))
+        },
+        "strand_distribution": [
+            {"label": row["label"], "total": row["total"]} for row in strands
+        ],
+        "course_distribution": [
+            {"label": row["label"], "total": row["total"]} for row in course_distribution
+        ],
+        "recent_students": [
+            {
+                "studentID": row["studentID"],
+                "name": format_full_name(row["first_name"], row["last_name"]),
+                "email": row["email"],
+                "section": row["section"] or "",
+                "strand": row["strand_name"] or "",
+                "attempts": row["attempts"] or 0,
+                "profilePictureUrl": profile_picture_path(row["profile_picture"]),
+                "created_at": as_iso(row["created_at"]),
+                "last_attempt_at": as_iso(row["last_attempt_at"])
+            }
+            for row in recent_students
+        ],
+        "recent_attempts": [
+            {
+                "id": row["id"],
+                "studentID": row["studentID"],
+                "name": format_full_name(row["first_name"], row["last_name"]),
+                "strand": row["strand_name"] or "",
+                "profilePictureUrl": profile_picture_path(row["profile_picture"]),
+                "total_score": round(float(row["total_score"] or 0), 2),
+                "time_display": time_display(row["time_taken_seconds"]),
+                "recommended_course": row["recommended_course"] or "",
+                "alignment_score": row["alignment_score"] or "",
+                "created_at": as_iso(row["created_at"])
+            }
+            for row in recent_attempts
+        ],
+        "top_students": [
+            {
+                "rank": index,
+                "studentID": row["studentID"],
+                "name": format_full_name(row["first_name"], row["last_name"]),
+                "strand": row["strand_name"] or "",
+                "profilePictureUrl": profile_picture_path(row["profile_picture"]),
+                "best_score": round(float(row["best_score"] or 0), 2),
+                "best_time": time_display(row["best_time"])
+            }
+            for index, row in enumerate(top_students, start=1)
+        ]
     })
 
 

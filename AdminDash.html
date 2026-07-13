@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AcadSync Admin Dashboard</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link rel="icon" href="Acadsync.jpg">
+    <style>
+        :root {
+            --brand-950: #082116;
+            --brand-900: #0f3424;
+            --brand-800: #154a32;
+            --brand-700: #1f6f49;
+            --brand-600: #258556;
+            --brand-100: #e9f7ef;
+            --brand-50: #f5fbf8;
+            --gold: #f4b740;
+            --blue: #2d6cdf;
+            --ink-900: #142018;
+            --ink-700: #46564e;
+            --ink-500: #718078;
+            --line: #dbe8e1;
+            --surface: #ffffff;
+            --surface-soft: #f7fbf8;
+            --danger: #d92d20;
+            --shadow: 0 18px 50px rgba(8, 33, 22, .12);
+            --radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Poppins", "Segoe UI", Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            color: var(--ink-900);
+            background:
+                linear-gradient(90deg, rgba(31, 111, 73, .07) 1px, transparent 1px),
+                linear-gradient(rgba(31, 111, 73, .07) 1px, transparent 1px),
+                var(--brand-50);
+            background-size: 54px 54px;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        .admin-shell {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            padding: 28px 22px;
+            color: #fff;
+            background: linear-gradient(180deg, var(--brand-950), var(--brand-800));
+            box-shadow: 12px 0 40px rgba(8, 33, 22, .16);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 34px;
+        }
+
+        .brand-mark {
+            width: 46px;
+            height: 46px;
+            display: grid;
+            place-items: center;
+            border-radius: var(--radius);
+            background: rgba(255, 255, 255, .13);
+            border: 1px solid rgba(255, 255, 255, .18);
+            font-size: 1.55rem;
+        }
+
+        .brand h1 {
+            font-size: 1.2rem;
+            line-height: 1.1;
+        }
+
+        .brand span {
+            display: block;
+            margin-top: 3px;
+            color: rgba(255, 255, 255, .66);
+            font-size: .78rem;
+            font-weight: 600;
+        }
+
+        .nav-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .nav-item,
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            min-height: 44px;
+            padding: 0 12px;
+            border: 1px solid transparent;
+            border-radius: var(--radius);
+            color: rgba(255, 255, 255, .82);
+            background: transparent;
+            text-decoration: none;
+            font-weight: 800;
+            cursor: pointer;
+            transition: .22s ease;
+        }
+
+        .nav-item.active,
+        .nav-item:hover,
+        .sidebar-link:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, .12);
+            border-color: rgba(255, 255, 255, .16);
+        }
+
+        .sidebar-note {
+            position: absolute;
+            left: 22px;
+            right: 22px;
+            bottom: 24px;
+            padding: 14px;
+            border-radius: var(--radius);
+            background: rgba(255, 255, 255, .1);
+            border: 1px solid rgba(255, 255, 255, .14);
+            color: rgba(255, 255, 255, .78);
+            font-size: .82rem;
+            line-height: 1.45;
+        }
+
+        .main {
+            min-width: 0;
+            padding: 26px clamp(18px, 4vw, 44px) 36px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 26px;
+        }
+
+        .eyebrow {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--brand-700);
+            font-size: .82rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        .topbar h2 {
+            margin-top: 6px;
+            font-size: clamp(1.8rem, 3vw, 2.7rem);
+            line-height: 1.05;
+        }
+
+        .topbar p {
+            margin-top: 8px;
+            color: var(--ink-700);
+            font-size: .96rem;
+        }
+
+        .actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            min-height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 14px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: var(--surface);
+            color: var(--ink-900);
+            font-weight: 900;
+            text-decoration: none;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: .2s ease;
+        }
+
+        .btn.primary {
+            color: #fff;
+            border-color: var(--brand-700);
+            background: var(--brand-700);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 20px 54px rgba(8, 33, 22, .16);
+        }
+
+        .status-line {
+            margin-bottom: 18px;
+            color: var(--ink-500);
+            font-size: .86rem;
+            font-weight: 700;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .stat-card,
+        .panel {
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: rgba(255, 255, 255, .9);
+            box-shadow: var(--shadow);
+        }
+
+        .stat-card {
+            display: grid;
+            grid-template-columns: 48px 1fr;
+            gap: 12px;
+            align-items: center;
+            min-height: 124px;
+            padding: 18px;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            display: grid;
+            place-items: center;
+            border-radius: var(--radius);
+            color: var(--brand-800);
+            background: var(--brand-100);
+            font-size: 1.5rem;
+        }
+
+        .stat-card strong {
+            display: block;
+            font-size: clamp(1.55rem, 3vw, 2.2rem);
+            line-height: 1;
+        }
+
+        .stat-card span {
+            display: block;
+            margin-top: 7px;
+            color: var(--ink-500);
+            font-size: .82rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(330px, .85fr);
+            gap: 18px;
+            align-items: start;
+        }
+
+        .panel {
+            overflow: hidden;
+        }
+
+        .panel-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            font-size: 1.05rem;
+            font-weight: 900;
+        }
+
+        .panel-title i {
+            color: var(--brand-700);
+            font-size: 1.25rem;
+        }
+
+        .panel-body {
+            padding: 18px 20px 20px;
+        }
+
+        .search-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .search-row input {
+            width: 100%;
+            min-height: 42px;
+            padding: 0 12px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            color: var(--ink-900);
+            background: var(--surface-soft);
+            outline: none;
+        }
+
+        .search-row input:focus {
+            border-color: var(--brand-600);
+            box-shadow: 0 0 0 4px rgba(37, 133, 86, .12);
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 720px;
+        }
+
+        th,
+        td {
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--line);
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        th {
+            color: var(--ink-500);
+            font-size: .76rem;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        td {
+            color: var(--ink-700);
+            font-size: .88rem;
+            font-weight: 650;
+        }
+
+        .student-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 220px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            flex: 0 0 auto;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            border-radius: 50%;
+            background: var(--brand-100);
+            color: var(--brand-800);
+            font-weight: 900;
+            border: 2px solid #fff;
+            box-shadow: 0 8px 18px rgba(8, 33, 22, .12);
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .student-cell strong {
+            display: block;
+            color: var(--ink-900);
+            font-size: .92rem;
+        }
+
+        .student-cell span {
+            display: block;
+            margin-top: 2px;
+            color: var(--ink-500);
+            font-size: .78rem;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            min-height: 26px;
+            padding: 0 9px;
+            border-radius: 999px;
+            color: var(--brand-800);
+            background: var(--brand-100);
+            font-size: .78rem;
+            font-weight: 900;
+        }
+
+        .rank {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--brand-100);
+            color: var(--brand-800);
+            font-weight: 900;
+        }
+
+        .rank.top-1 {
+            background: #fff3cf;
+            color: #8a5a00;
+        }
+
+        .rank.top-2 {
+            background: #eef1f5;
+            color: #4d5968;
+        }
+
+        .rank.top-3 {
+            background: #ffe8d7;
+            color: #9a4e15;
+        }
+
+        .chart-list {
+            display: grid;
+            gap: 13px;
+        }
+
+        .chart-row {
+            display: grid;
+            gap: 7px;
+        }
+
+        .chart-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            color: var(--ink-700);
+            font-size: .86rem;
+            font-weight: 850;
+        }
+
+        .bar {
+            height: 10px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: #e1ece6;
+        }
+
+        .bar span {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--brand-800), var(--brand-500));
+        }
+
+        .top-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .top-item {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding: 12px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: var(--surface-soft);
+        }
+
+        .top-item-main {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .top-item-main strong {
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .top-item-main span {
+            display: block;
+            margin-top: 3px;
+            color: var(--ink-500);
+            font-size: .8rem;
+            font-weight: 700;
+        }
+
+        .score {
+            color: var(--brand-800);
+            font-weight: 950;
+            white-space: nowrap;
+        }
+
+        .empty,
+        .loading,
+        .error {
+            padding: 20px;
+            border: 1px dashed var(--line);
+            border-radius: var(--radius);
+            color: var(--ink-500);
+            background: var(--surface-soft);
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .error {
+            color: #7a1010;
+            background: #fff0f0;
+            border-color: #f2b7b7;
+        }
+
+        .admin-lock {
+            position: fixed;
+            inset: 0;
+            z-index: 20;
+            display: grid;
+            place-items: center;
+            padding: 18px;
+            background:
+                linear-gradient(135deg, rgba(8, 33, 22, .9), rgba(31, 111, 73, .72)),
+                url("Acadsync.jpg") center / cover no-repeat;
+        }
+
+        .admin-lock.hidden {
+            display: none;
+        }
+
+        .admin-lock-card {
+            width: min(460px, 100%);
+            padding: 28px;
+            border: 1px solid rgba(255, 255, 255, .18);
+            border-radius: var(--radius);
+            color: #fff;
+            background: rgba(8, 33, 22, .88);
+            box-shadow: 0 28px 90px rgba(0, 0, 0, .34);
+            backdrop-filter: blur(16px);
+        }
+
+        .admin-lock-icon {
+            width: 54px;
+            height: 54px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 18px;
+            border-radius: var(--radius);
+            background: rgba(255, 255, 255, .12);
+            font-size: 1.8rem;
+        }
+
+        .admin-lock-card h2 {
+            font-size: 1.7rem;
+            line-height: 1.1;
+        }
+
+        .admin-lock-card p {
+            margin: 10px 0 18px;
+            color: rgba(255, 255, 255, .76);
+            line-height: 1.5;
+        }
+
+        .admin-lock-field {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .admin-lock-field input {
+            width: 100%;
+            min-height: 52px;
+            padding: 0 44px 0 14px;
+            border: 1px solid rgba(255, 255, 255, .22);
+            border-radius: var(--radius);
+            color: #fff;
+            background: rgba(255, 255, 255, .1);
+            outline: none;
+        }
+
+        .admin-lock-field input::placeholder {
+            color: rgba(255, 255, 255, .56);
+        }
+
+        .admin-lock-field input:focus {
+            border-color: rgba(255, 255, 255, .62);
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, .1);
+        }
+
+        .admin-lock-field i {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, .72);
+            font-size: 1.25rem;
+        }
+
+        .admin-lock-error {
+            display: none;
+            margin-bottom: 12px;
+            padding: 10px 12px;
+            border: 1px solid #f2b7b7;
+            border-radius: var(--radius);
+            color: #ffd9d9;
+            background: rgba(122, 16, 16, .38);
+            font-weight: 800;
+            line-height: 1.4;
+        }
+
+        .admin-lock-error.show {
+            display: block;
+        }
+
+        .admin-lock-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .admin-lock-actions .btn {
+            flex: 1;
+            box-shadow: none;
+        }
+
+        @media (max-width: 1100px) {
+            .admin-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+                height: auto;
+                padding: 18px;
+            }
+
+            .sidebar-note {
+                position: static;
+                margin-top: 16px;
+            }
+
+            .nav-list {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            .cards-grid,
+            .dashboard-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 760px) {
+            .main {
+                padding: 18px 12px 28px;
+            }
+
+            .topbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .actions {
+                width: 100%;
+                justify-content: stretch;
+            }
+
+            .actions .btn {
+                flex: 1;
+            }
+
+            .cards-grid,
+            .dashboard-grid,
+            .nav-list {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-card {
+                min-height: 104px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-lock" id="adminLock">
+        <form class="admin-lock-card" id="adminLoginForm">
+            <div class="admin-lock-icon"><i class="bx bx-lock-alt"></i></div>
+            <h2>Admin Access</h2>
+            <p>Enter the admin key to view student records, quiz activity, and recommendation analytics.</p>
+            <div class="admin-lock-field">
+                <input id="adminKeyInput" type="password" placeholder="Admin key" autocomplete="current-password" required>
+                <i class="bx bx-key"></i>
+            </div>
+            <div class="admin-lock-error" id="adminLoginError"></div>
+            <div class="admin-lock-actions">
+                <button class="btn primary" type="submit"><i class="bx bx-log-in"></i> Unlock</button>
+                <a class="btn" href="index.html"><i class="bx bx-arrow-back"></i> Back</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="admin-shell">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-mark"><i class="bx bx-shield-quarter"></i></div>
+                <div>
+                    <h1>AcadSync</h1>
+                    <span>Admin Dashboard</span>
+                </div>
+            </div>
+
+            <nav class="nav-list" aria-label="Admin navigation">
+                <button class="nav-item active" type="button" data-scroll="overview"><i class="bx bx-grid-alt"></i> Overview</button>
+                <button class="nav-item" type="button" data-scroll="students"><i class="bx bx-user"></i> Students</button>
+                <button class="nav-item" type="button" data-scroll="attempts"><i class="bx bx-list-check"></i> Attempts</button>
+                <a class="sidebar-link" href="Homepage.html"><i class="bx bx-home"></i> Student View</a>
+            </nav>
+
+            <div class="sidebar-note">
+                Read-only view for monitoring student registrations, quiz activity, recommendations, and leaderboard performance.
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <div>
+                    <div class="eyebrow"><i class="bx bx-line-chart"></i> Live Academic Snapshot</div>
+                    <h2>Admin Dashboard</h2>
+                    <p>Track AcadSync usage, student activity, and recommendation trends.</p>
+                </div>
+                <div class="actions">
+                    <button class="btn primary" id="refreshBtn" type="button"><i class="bx bx-refresh"></i> Refresh</button>
+                    <button class="btn" id="adminLogoutBtn" type="button"><i class="bx bx-lock"></i> Lock</button>
+                    <a class="btn" href="index.html"><i class="bx bx-log-out"></i> Exit</a>
+                </div>
+            </header>
+
+            <p class="status-line" id="statusLine">Loading dashboard data...</p>
+
+            <section id="overview" class="cards-grid" aria-label="Overview cards">
+                <article class="stat-card">
+                    <div class="stat-icon"><i class="bx bx-user"></i></div>
+                    <div><strong id="totalStudents">0</strong><span>Total Students</span></div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-icon"><i class="bx bx-edit-alt"></i></div>
+                    <div><strong id="totalAttempts">0</strong><span>Quiz Attempts</span></div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-icon"><i class="bx bx-trending-up"></i></div>
+                    <div><strong id="averageScore">0%</strong><span>Average Score</span></div>
+                </article>
+                <article class="stat-card">
+                    <div class="stat-icon"><i class="bx bx-check-circle"></i></div>
+                    <div><strong id="activeStudents">0</strong><span>With History</span></div>
+                </article>
+            </section>
+
+            <section class="dashboard-grid">
+                <div class="panel" id="students">
+                    <div class="panel-head">
+                        <h3 class="panel-title"><i class="bx bx-group"></i> Recent Students</h3>
+                        <span class="pill" id="studentCountPill">0 students</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="search-row">
+                            <input id="studentSearch" type="search" placeholder="Search by name, email, or strand">
+                        </div>
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Strand</th>
+                                        <th>Attempts</th>
+                                        <th>Joined</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="studentsBody">
+                                    <tr><td colspan="4"><div class="loading">Loading students...</div></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-head">
+                        <h3 class="panel-title"><i class="bx bx-trophy"></i> Top Students</h3>
+                    </div>
+                    <div class="panel-body">
+                        <div class="top-list" id="topStudentsList">
+                            <div class="loading">Loading leaderboard preview...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-head">
+                        <h3 class="panel-title"><i class="bx bx-pie-chart-alt-2"></i> Strand Distribution</h3>
+                    </div>
+                    <div class="panel-body">
+                        <div class="chart-list" id="strandChart"></div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-head">
+                        <h3 class="panel-title"><i class="bx bx-book-open"></i> Recommended Courses</h3>
+                    </div>
+                    <div class="panel-body">
+                        <div class="chart-list" id="courseChart"></div>
+                    </div>
+                </div>
+
+                <div class="panel" id="attempts" style="grid-column: 1 / -1;">
+                    <div class="panel-head">
+                        <h3 class="panel-title"><i class="bx bx-history"></i> Recent Quiz Attempts</h3>
+                        <span class="pill" id="lastAttemptPill">No attempts yet</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Recommendation</th>
+                                        <th>Score</th>
+                                        <th>Match</th>
+                                        <th>Time</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attemptsBody">
+                                    <tr><td colspan="6"><div class="loading">Loading attempts...</div></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        const ADMIN_KEY_STORAGE = "acadSyncAdminKey";
+        let dashboardData = null;
+
+        const els = {
+            adminLock: document.getElementById("adminLock"),
+            adminLoginForm: document.getElementById("adminLoginForm"),
+            adminKeyInput: document.getElementById("adminKeyInput"),
+            adminLoginError: document.getElementById("adminLoginError"),
+            adminLogoutBtn: document.getElementById("adminLogoutBtn"),
+            statusLine: document.getElementById("statusLine"),
+            totalStudents: document.getElementById("totalStudents"),
+            totalAttempts: document.getElementById("totalAttempts"),
+            averageScore: document.getElementById("averageScore"),
+            activeStudents: document.getElementById("activeStudents"),
+            studentCountPill: document.getElementById("studentCountPill"),
+            studentsBody: document.getElementById("studentsBody"),
+            topStudentsList: document.getElementById("topStudentsList"),
+            strandChart: document.getElementById("strandChart"),
+            courseChart: document.getElementById("courseChart"),
+            attemptsBody: document.getElementById("attemptsBody"),
+            lastAttemptPill: document.getElementById("lastAttemptPill"),
+            studentSearch: document.getElementById("studentSearch"),
+            refreshBtn: document.getElementById("refreshBtn"),
+        };
+
+        function getAdminKey() {
+            return sessionStorage.getItem(ADMIN_KEY_STORAGE) || "";
+        }
+
+        function setAdminKey(value) {
+            sessionStorage.setItem(ADMIN_KEY_STORAGE, value);
+        }
+
+        function clearAdminKey() {
+            sessionStorage.removeItem(ADMIN_KEY_STORAGE);
+        }
+
+        function showAdminLock(message = "") {
+            els.adminLock.classList.remove("hidden");
+            els.adminLoginError.textContent = message;
+            els.adminLoginError.classList.toggle("show", Boolean(message));
+            setTimeout(() => els.adminKeyInput.focus(), 50);
+        }
+
+        function hideAdminLock() {
+            els.adminLock.classList.add("hidden");
+            els.adminLoginError.classList.remove("show");
+        }
+
+        async function verifyAdminKey(adminKey) {
+            const response = await fetch(`${API_BASE}/api/admin/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ admin_key: adminKey }),
+            });
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || "Invalid admin key.");
+            }
+        }
+
+        function formatDate(value) {
+            if (!value) return "--";
+            const parsed = new Date(value.replace(" ", "T"));
+            if (Number.isNaN(parsed.getTime())) return value;
+            return parsed.toLocaleString([], {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+            });
+        }
+
+        function initials(name) {
+            return String(name || "Student")
+                .split(/\s+/)
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((part) => part[0])
+                .join("")
+                .toUpperCase() || "S";
+        }
+
+        function avatarHtml(entry) {
+            if (entry.profilePictureUrl) {
+                return `<span class="avatar"><img src="${entry.profilePictureUrl}" alt="${entry.name} profile picture"></span>`;
+            }
+            return `<span class="avatar">${initials(entry.name)}</span>`;
+        }
+
+        function studentCell(entry, subtext) {
+            return `
+                <div class="student-cell">
+                    ${avatarHtml(entry)}
+                    <div>
+                        <strong>${entry.name || "Unnamed Student"}</strong>
+                        <span>${subtext || `Student No. ${entry.studentID}`}</span>
+                    </div>
+                </div>`;
+        }
+
+        function renderCards(summary) {
+            els.totalStudents.textContent = summary.total_students || 0;
+            els.totalAttempts.textContent = summary.total_attempts || 0;
+            els.averageScore.textContent = `${summary.average_score || 0}%`;
+            els.activeStudents.textContent = summary.active_students || 0;
+            els.lastAttemptPill.textContent = summary.last_attempt_at
+                ? `Last attempt: ${formatDate(summary.last_attempt_at)}`
+                : "No attempts yet";
+        }
+
+        function renderStudents(students) {
+            const query = els.studentSearch.value.trim().toLowerCase();
+            const filtered = students.filter((student) => {
+                const haystack = [
+                    student.name,
+                    student.email,
+                    student.strand,
+                    student.section,
+                    student.studentID,
+                ].join(" ").toLowerCase();
+                return haystack.includes(query);
+            });
+
+            els.studentCountPill.textContent = `${students.length} students`;
+
+            if (!filtered.length) {
+                els.studentsBody.innerHTML = `<tr><td colspan="4"><div class="empty">No matching students found.</div></td></tr>`;
+                return;
+            }
+
+            els.studentsBody.innerHTML = filtered.map((student) => `
+                <tr>
+                    <td>${studentCell(student, student.email || `Student No. ${student.studentID}`)}</td>
+                    <td><span class="pill">${student.strand || "Unassigned"}</span></td>
+                    <td>${student.attempts || 0}</td>
+                    <td>${formatDate(student.created_at)}</td>
+                </tr>
+            `).join("");
+        }
+
+        function renderTopStudents(students) {
+            if (!students.length) {
+                els.topStudentsList.innerHTML = `<div class="empty">No leaderboard records yet.</div>`;
+                return;
+            }
+
+            els.topStudentsList.innerHTML = students.map((student) => `
+                <div class="top-item">
+                    <span class="rank top-${student.rank}">#${student.rank}</span>
+                    ${avatarHtml(student)}
+                    <div class="top-item-main">
+                        <strong>${student.name}</strong>
+                        <span>${student.strand || "Unassigned"} - ${student.best_time}</span>
+                    </div>
+                    <div class="score">${student.best_score}%</div>
+                </div>
+            `).join("");
+        }
+
+        function renderChart(container, rows, emptyText) {
+            if (!rows.length) {
+                container.innerHTML = `<div class="empty">${emptyText}</div>`;
+                return;
+            }
+
+            const max = Math.max(...rows.map((row) => row.total || 0), 1);
+            container.innerHTML = rows.map((row) => {
+                const percent = Math.max(6, Math.round(((row.total || 0) / max) * 100));
+                return `
+                    <div class="chart-row">
+                        <div class="chart-meta">
+                            <span>${row.label}</span>
+                            <strong>${row.total}</strong>
+                        </div>
+                        <div class="bar"><span style="width:${percent}%"></span></div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function renderAttempts(attempts) {
+            if (!attempts.length) {
+                els.attemptsBody.innerHTML = `<tr><td colspan="6"><div class="empty">No quiz attempts yet.</div></td></tr>`;
+                return;
+            }
+
+            els.attemptsBody.innerHTML = attempts.map((attempt) => `
+                <tr>
+                    <td>${studentCell(attempt, `${attempt.strand || "Unassigned"} - Student No. ${attempt.studentID}`)}</td>
+                    <td>${attempt.recommended_course || "No recommendation"}</td>
+                    <td><strong>${attempt.total_score}%</strong></td>
+                    <td>${attempt.alignment_score || "--"}</td>
+                    <td>${attempt.time_display}</td>
+                    <td>${formatDate(attempt.created_at)}</td>
+                </tr>
+            `).join("");
+        }
+
+        function renderDashboard(data) {
+            dashboardData = data;
+            renderCards(data.summary || {});
+            renderStudents(data.recent_students || []);
+            renderTopStudents(data.top_students || []);
+            renderChart(els.strandChart, data.strand_distribution || [], "No strand data yet.");
+            renderChart(els.courseChart, data.course_distribution || [], "No course recommendations yet.");
+            renderAttempts(data.recent_attempts || []);
+        }
+
+        async function loadDashboard() {
+            const adminKey = getAdminKey();
+            if (!adminKey) {
+                showAdminLock();
+                return;
+            }
+
+            els.statusLine.textContent = "Loading dashboard data...";
+            els.refreshBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/admin/dashboard`, {
+                    headers: { "X-Admin-Key": adminKey },
+                });
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || "Could not load dashboard.");
+                }
+
+                renderDashboard(data);
+                els.statusLine.textContent = `Updated ${new Date().toLocaleString()}`;
+            } catch (error) {
+                if (/admin key|admin access|invalid/i.test(error.message || "")) {
+                    clearAdminKey();
+                    showAdminLock(error.message);
+                }
+                els.statusLine.textContent = error.message || "Could not load dashboard.";
+                els.studentsBody.innerHTML = `<tr><td colspan="4"><div class="error">${els.statusLine.textContent}</div></td></tr>`;
+                els.attemptsBody.innerHTML = `<tr><td colspan="6"><div class="error">${els.statusLine.textContent}</div></td></tr>`;
+                els.topStudentsList.innerHTML = `<div class="error">${els.statusLine.textContent}</div>`;
+                els.strandChart.innerHTML = `<div class="error">${els.statusLine.textContent}</div>`;
+                els.courseChart.innerHTML = `<div class="error">${els.statusLine.textContent}</div>`;
+            } finally {
+                els.refreshBtn.disabled = false;
+            }
+        }
+
+        els.adminLoginForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const adminKey = els.adminKeyInput.value.trim();
+
+            if (!adminKey) {
+                showAdminLock("Please enter the admin key.");
+                return;
+            }
+
+            els.adminLoginError.classList.remove("show");
+            els.adminLoginForm.querySelector("button[type='submit']").disabled = true;
+
+            try {
+                await verifyAdminKey(adminKey);
+                setAdminKey(adminKey);
+                els.adminKeyInput.value = "";
+                hideAdminLock();
+                await loadDashboard();
+            } catch (error) {
+                showAdminLock(error.message || "Invalid admin key.");
+            } finally {
+                els.adminLoginForm.querySelector("button[type='submit']").disabled = false;
+            }
+        });
+
+        els.adminLogoutBtn.addEventListener("click", () => {
+            clearAdminKey();
+            showAdminLock("Admin dashboard locked.");
+        });
+
+        document.querySelectorAll("[data-scroll]").forEach((button) => {
+            button.addEventListener("click", () => {
+                document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
+                button.classList.add("active");
+                document.getElementById(button.dataset.scroll)?.scrollIntoView({ behavior: "smooth", block: "start" });
+            });
+        });
+
+        els.studentSearch.addEventListener("input", () => {
+            renderStudents(dashboardData?.recent_students || []);
+        });
+
+        els.refreshBtn.addEventListener("click", loadDashboard);
+        if (getAdminKey()) {
+            hideAdminLock();
+            loadDashboard();
+        } else {
+            showAdminLock();
+        }
+    </script>
+</body>
+</html>
