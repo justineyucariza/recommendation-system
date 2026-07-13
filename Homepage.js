@@ -50,6 +50,12 @@ function formatDateTime(value) {
   }).format(date);
 }
 
+function formatFeaturedType(value) {
+  return String(value || "Featured Content")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 function setAvatarDisplay(imageEl, fallbackEl, imageUrl, initials) {
   if (!imageEl || !fallbackEl) return;
 
@@ -200,6 +206,29 @@ async function refreshSessionProfile() {
 
 refreshSessionProfile();
 updateProfileCompletion();
+loadFeaturedContent();
+
+async function loadFeaturedContent() {
+  const card = document.getElementById("featuredContentCard");
+  if (!card) return;
+
+  try {
+    const response = await fetch(`${API_BASE}/api/featured-content`);
+    const data = await response.json();
+    if (!response.ok || !data.success || !data.featured_content) {
+      card.classList.add("hidden");
+      return;
+    }
+
+    const item = data.featured_content;
+    document.getElementById("featuredContentType").textContent = formatFeaturedType(item.content_type);
+    document.getElementById("featuredContentTitle").textContent = item.title || "Announcement";
+    document.getElementById("featuredContentMessage").textContent = item.message || "";
+    card.classList.remove("hidden");
+  } catch (err) {
+    card.classList.add("hidden");
+  }
+}
 
 function updateProfileCompletion(hasQuizHistory) {
   if (typeof hasQuizHistory === "boolean") {

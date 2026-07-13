@@ -571,6 +571,17 @@ def run_startup_migrations():
             ("CRIM", "Bachelor of Science in Criminology (BSCRIM)")
         ])
 
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS featured_content (
+                id           INT AUTO_INCREMENT PRIMARY KEY,
+                title        VARCHAR(150) NOT NULL,
+                message      TEXT NOT NULL,
+                content_type VARCHAR(40) NOT NULL DEFAULT 'announcement',
+                is_active    TINYINT(1) NOT NULL DEFAULT 1,
+                created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
         # admins - separate login accounts for system managers
         cur.execute("""
             CREATE TABLE IF NOT EXISTS admins (
@@ -1163,6 +1174,43 @@ def leaderboard():
     })
 
 
+@app.route('/api/featured-content', methods=['GET'])
+def featured_content():
+    conn = get_db()
+    if not conn:
+        return jsonify({"success": False, "message": "Database connection failed."}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT id, title, message, content_type, created_at
+            FROM featured_content
+            WHERE is_active = 1
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+        """)
+        item = cursor.fetchone()
+    except Error as e:
+        print(f"[DB FEATURED CONTENT ERROR] {e}")
+        return jsonify({"success": False, "message": "Could not load featured content."}), 500
+    finally:
+        conn.close()
+
+    if not item:
+        return jsonify({"success": True, "featured_content": None})
+
+    return jsonify({
+        "success": True,
+        "featured_content": {
+            "id": item["id"],
+            "title": item["title"],
+            "message": item["message"],
+            "content_type": item["content_type"],
+            "created_at": item["created_at"].isoformat(sep=" ") if item["created_at"] else ""
+        }
+    })
+
+
 @app.route('/api/admin/login', methods=['POST'])
 def admin_login():
     data = request.get_json() or {}
@@ -1289,6 +1337,14 @@ def admin_dashboard():
         courses = cursor.fetchall()
 
         cursor.execute("""
+            SELECT id, title, message, content_type, is_active, created_at
+            FROM featured_content
+            ORDER BY created_at DESC, id DESC
+            LIMIT 20
+        """)
+        featured_items = cursor.fetchall()
+
+        cursor.execute("""
             SELECT
                 qr.id,
                 qr.studentID,
@@ -1412,6 +1468,17 @@ def admin_dashboard():
                 "created_at": as_iso(row.get("created_at"))
             }
             for row in courses
+        ],
+        "featured_content": [
+            {
+                "id": row["id"],
+                "title": row["title"],
+                "message": row["message"],
+                "content_type": row["content_type"],
+                "is_active": bool(row.get("is_active", 1)),
+                "created_at": as_iso(row.get("created_at"))
+            }
+            for row in featured_items
         ]
     })
 
@@ -1460,6 +1527,81 @@ def admin_change_password():
     except Error as e:
         print(f"[DB ADMIN CHANGE PASSWORD ERROR] {e}")
         return jsonify({"success": False, "message": "Could not update admin password."}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/admin/featured-content', methods=['POST'])
+def admin_create_featured_content():
+    admin, auth_error = require_admin_user()
+    if auth_error:
+        return auth_error
+
+    data = request.get_json() or {}
+    title = data.get("title", "").strip()
+    message = data.get("message", "").strip()
+    content_type = data.get("content_type", "announcement").strip() or "announcement"
+    allowed_types = {"announcement", "important_update", "highlighted_course"}
+
+    if not title or not message:
+        return jsonify({"success": False, "message": "Title and message are required."}), 400
+
+    if content_type not in allowed_types:
+        return jsonify({"success": False, "message": "Invalid featured content type."}), 400
+
+    conn = get_db()
+    if not conn:
+        return jsonify({"success": False, "message": "Database connection failed."}), 500
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO featured_content (title, message, content_type, is_active)
+            VALUES (%s, %s, %s, 1)
+        """, (title, message, content_type))
+        conn.commit()
+        return jsonify({"success": True, "message": "Featured content published.", "id": cursor.lastrowid})
+    except Error as e:
+        print(f"[DB ADMIN FEATURED CREATE ERROR] {e}")
+        return jsonify({"success": False, "message": "Could not publish featured content."}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/admin/featured-content/<int:content_id>', methods=['PATCH'])
+def admin_update_featured_content(content_id):
+    admin, auth_error = require_admin_user()
+    if auth_error:
+        return auth_error
+
+    data = request.get_json() or {}
+    fields = []
+    values = []
+
+    if "is_active" in data:
+        fields.append("is_active = %s")
+        values.append(1 if is_truthy(data.get("is_active")) else 0)
+
+    if not fields:
+        return jsonify({"success": False, "message": "No featured content changes were provided."}), 400
+
+    conn = get_db()
+    if not conn:
+        return jsonify({"success": False, "message": "Database connection failed."}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id FROM featured_content WHERE id = %s", (content_id,))
+        if not cursor.fetchone():
+            return jsonify({"success": False, "message": "Featured content not found."}), 404
+
+        values.append(content_id)
+        cursor.execute(f"UPDATE featured_content SET {', '.join(fields)} WHERE id = %s", tuple(values))
+        conn.commit()
+        return jsonify({"success": True, "message": "Featured content updated."})
+    except Error as e:
+        print(f"[DB ADMIN FEATURED UPDATE ERROR] {e}")
+        return jsonify({"success": False, "message": "Could not update featured content."}), 500
     finally:
         conn.close()
 

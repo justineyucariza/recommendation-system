@@ -388,7 +388,9 @@ input {
 }
 
 .search-row input,
-.mini-form input {
+.mini-form input,
+.mini-form select,
+.mini-form textarea {
     width: 100%;
     min-height: 42px;
     padding: 0 12px;
@@ -400,9 +402,21 @@ input {
 }
 
 .search-row input:focus,
-.mini-form input:focus {
+.mini-form input:focus,
+.mini-form select:focus,
+.mini-form textarea:focus {
     border-color: var(--brand-600);
     box-shadow: 0 0 0 4px rgba(37, 133, 86, .12);
+}
+
+.mini-form textarea {
+    min-height: 90px;
+    padding: 12px;
+    resize: vertical;
+}
+
+.featured-form {
+    grid-template-columns: minmax(160px, .75fr) minmax(160px, .55fr) minmax(260px, 1.4fr) auto;
 }
 
 .table-wrap {
@@ -475,6 +489,22 @@ td {
     margin-top: 2px;
     color: var(--ink-500);
     font-size: .78rem;
+}
+
+.content-cell {
+    display: grid;
+    gap: 4px;
+    max-width: 560px;
+}
+
+.content-cell strong {
+    color: var(--ink-900);
+}
+
+.content-cell span {
+    color: var(--ink-500);
+    font-size: .82rem;
+    line-height: 1.45;
 }
 
 .pill {
@@ -1099,6 +1129,8 @@ body.admin-compact .panel-body {
 
 body.admin-dark input,
 body.admin-dark .mini-form input,
+body.admin-dark .mini-form select,
+body.admin-dark .mini-form textarea,
 body.admin-dark .settings-grid input,
 body.admin-dark .search-row input {
     color: var(--ink-900);
@@ -1119,6 +1151,7 @@ body.admin-dark td {
 }
 
 body.admin-dark .student-cell strong,
+body.admin-dark .content-cell strong,
 body.admin-dark .top-item-main strong,
 body.admin-dark .panel-title,
 body.admin-dark .chart-meta,
@@ -1129,6 +1162,7 @@ body.admin-dark .settings-section h3 {
 }
 
 body.admin-dark .student-cell span,
+body.admin-dark .content-cell span,
 body.admin-dark .top-item-main span,
 body.admin-dark .confirm-exit-card p,
 body.admin-dark .settings-profile span,
@@ -1216,6 +1250,10 @@ body.admin-dark .settings-message.error {
 
     .mini-form {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .featured-form {
+        grid-template-columns: 1fr;
     }
 
     .settings-grid {
