@@ -976,6 +976,11 @@ body.admin-dark .rank.top-3 {
     font-size: 1.85rem;
 }
 
+.confirm-exit-icon.danger-icon {
+    color: #d92d20;
+    background: #ffe9e7;
+}
+
 .modal-x {
     width: 36px;
     height: 36px;

@@ -282,6 +282,11 @@ def public_email_error_message(error):
     text = str(error)
     if len(text) > 240:
         text = text[:237] + "..."
+    if "1010" in text:
+        return (
+            "Could not send email using resend: Resend blocked the request with error 1010. "
+            "The backend now sends a User-Agent header; redeploy the app and try again."
+        )
     return f"Could not send email using {email_provider_name()}: {text}"
 
 
@@ -319,6 +324,7 @@ def send_email_with_resend(to_email, subject, body):
         headers={
             "Authorization": f"Bearer {RESEND_CONFIG['api_key']}",
             "Content-Type": "application/json",
+            "User-Agent": "AcadSync/1.0 (Railway Flask app)",
         },
     )
 

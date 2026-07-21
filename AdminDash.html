@@ -6,7 +6,7 @@
     <title>AcadSync Admin Dashboard</title>
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <link rel="icon" href="Acadsync.jpg">
-    <link rel="stylesheet" href="AdminDash.css?v=20260721-featured-remove">
+    <link rel="stylesheet" href="AdminDash.css?v=20260721-remove-modal">
 </head>
 <body>
     <div class="admin-lock hidden" id="adminLock">
@@ -36,6 +36,20 @@
             <div class="confirm-exit-actions">
                 <button class="btn" id="cancelExitBtn" type="button"><i class="bx bx-x"></i> Cancel</button>
                 <button class="btn danger" id="confirmExitBtn" type="button"><i class="bx bx-log-out"></i> Log Out</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="confirm-exit-overlay hidden" id="confirmDeleteFeaturedModal" role="dialog" aria-modal="true" aria-labelledby="confirmDeleteFeaturedTitle">
+        <div class="confirm-exit-card">
+            <button class="modal-x" id="deleteFeaturedCloseBtn" type="button" aria-label="Close remove announcement confirmation"><i class="bx bx-x"></i></button>
+            <div class="confirm-exit-icon danger-icon"><i class="bx bx-trash"></i></div>
+            <span class="modal-kicker">Featured content</span>
+            <h2 id="confirmDeleteFeaturedTitle">Remove Announcement?</h2>
+            <p id="confirmDeleteFeaturedText">This announcement will be permanently removed from AcadSync.</p>
+            <div class="confirm-exit-actions">
+                <button class="btn" id="cancelDeleteFeaturedBtn" type="button"><i class="bx bx-x"></i> Cancel</button>
+                <button class="btn danger" id="confirmDeleteFeaturedBtn" type="button"><i class="bx bx-trash"></i> Remove</button>
             </div>
         </div>
     </div>
@@ -377,6 +391,7 @@
         };
         let dashboardData = null;
         let pendingExitTarget = "";
+        let pendingFeaturedDelete = null;
 
         const els = {
             adminLock: document.getElementById("adminLock"),
@@ -402,6 +417,11 @@
             exitCloseBtn: document.getElementById("exitCloseBtn"),
             cancelExitBtn: document.getElementById("cancelExitBtn"),
             confirmExitBtn: document.getElementById("confirmExitBtn"),
+            confirmDeleteFeaturedModal: document.getElementById("confirmDeleteFeaturedModal"),
+            deleteFeaturedCloseBtn: document.getElementById("deleteFeaturedCloseBtn"),
+            cancelDeleteFeaturedBtn: document.getElementById("cancelDeleteFeaturedBtn"),
+            confirmDeleteFeaturedBtn: document.getElementById("confirmDeleteFeaturedBtn"),
+            confirmDeleteFeaturedText: document.getElementById("confirmDeleteFeaturedText"),
             adminIdentity: document.getElementById("adminIdentity"),
             viewEyebrow: document.getElementById("viewEyebrow"),
             viewTitle: document.getElementById("viewTitle"),
@@ -487,6 +507,19 @@
         function closeExitConfirm() {
             pendingExitTarget = "";
             els.confirmExitModal.classList.add("hidden");
+        }
+
+        function openDeleteFeaturedConfirm(featuredId, title) {
+            pendingFeaturedDelete = { id: featuredId, title: title || "this announcement" };
+            els.confirmDeleteFeaturedText.textContent =
+                `Remove "${pendingFeaturedDelete.title}" permanently? Students will no longer see it.`;
+            els.confirmDeleteFeaturedModal.classList.remove("hidden");
+            setTimeout(() => els.cancelDeleteFeaturedBtn.focus(), 50);
+        }
+
+        function closeDeleteFeaturedConfirm() {
+            pendingFeaturedDelete = null;
+            els.confirmDeleteFeaturedModal.classList.add("hidden");
         }
 
         function openAdminSettings() {
@@ -985,9 +1018,36 @@
             window.location.href = pendingExitTarget || "index.html";
         });
 
+        els.cancelDeleteFeaturedBtn.addEventListener("click", closeDeleteFeaturedConfirm);
+        els.deleteFeaturedCloseBtn.addEventListener("click", closeDeleteFeaturedConfirm);
+
+        els.confirmDeleteFeaturedBtn.addEventListener("click", async () => {
+            if (!pendingFeaturedDelete?.id) return;
+
+            els.confirmDeleteFeaturedBtn.disabled = true;
+            try {
+                await adminRequest(`/api/admin/featured-content/${pendingFeaturedDelete.id}`, {
+                    method: "DELETE",
+                });
+                closeDeleteFeaturedConfirm();
+                showFeaturedNotice("Announcement removed.", "success");
+                await loadDashboard();
+            } catch (error) {
+                showFeaturedNotice(error.message || "Could not remove announcement.", "danger");
+            } finally {
+                els.confirmDeleteFeaturedBtn.disabled = false;
+            }
+        });
+
         els.confirmExitModal.addEventListener("click", (event) => {
             if (event.target === els.confirmExitModal) {
                 closeExitConfirm();
+            }
+        });
+
+        els.confirmDeleteFeaturedModal.addEventListener("click", (event) => {
+            if (event.target === els.confirmDeleteFeaturedModal) {
+                closeDeleteFeaturedConfirm();
             }
         });
 
@@ -1000,6 +1060,9 @@
         document.addEventListener("keydown", (event) => {
             if (event.key === "Escape" && !els.confirmExitModal.classList.contains("hidden")) {
                 closeExitConfirm();
+            }
+            if (event.key === "Escape" && !els.confirmDeleteFeaturedModal.classList.contains("hidden")) {
+                closeDeleteFeaturedConfirm();
             }
             if (event.key === "Escape" && !els.adminSettingsModal.classList.contains("hidden")) {
                 closeAdminSettings();
@@ -1101,14 +1164,7 @@
                     return;
                 }
 
-                const title = deleteButton.dataset.title || "this announcement";
-                if (!window.confirm(`Remove "${title}" permanently?`)) return;
-
-                await adminRequest(`/api/admin/featured-content/${deleteButton.dataset.deleteFeatured}`, {
-                    method: "DELETE",
-                });
-                showFeaturedNotice("Announcement removed.", "success");
-                await loadDashboard();
+                openDeleteFeaturedConfirm(deleteButton.dataset.deleteFeatured, deleteButton.dataset.title);
             } catch (error) {
                 els.statusLine.textContent = error.message || "Could not update featured content.";
                 showFeaturedNotice(error.message || "Could not update featured content.", "danger");
