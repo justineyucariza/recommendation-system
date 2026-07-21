@@ -503,6 +503,35 @@ input {
     overflow-x: auto;
 }
 
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+}
+
+.pagination-info,
+.pagination-page {
+    color: var(--ink-500);
+    font-size: .84rem;
+    font-weight: 850;
+}
+
+.pagination-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.pagination-buttons .mini-btn:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
@@ -1400,6 +1429,11 @@ body.admin-dark .settings-message.error {
     }
 
     .settings-actions {
+        flex-direction: column;
+    }
+
+    .pagination-controls {
+        align-items: flex-start;
         flex-direction: column;
     }
 

@@ -6,7 +6,7 @@
     <title>AcadSync Admin Dashboard</title>
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <link rel="icon" href="Acadsync.jpg">
-    <link rel="stylesheet" href="AdminDash.css?v=20260721-no-lock">
+    <link rel="stylesheet" href="AdminDash.css?v=20260721-course-pagination">
 </head>
 <body>
     <div class="admin-lock hidden" id="adminLock">
@@ -208,6 +208,7 @@
                                 </tbody>
                             </table>
                         </div>
+                        <div class="pagination-controls" id="coursesPagination"></div>
                     </div>
                 </div>
 
@@ -391,6 +392,10 @@
         let dashboardData = null;
         let pendingExitTarget = "";
         let pendingFeaturedDelete = null;
+        const PAGE_SIZE = 10;
+        const tablePages = {
+            courses: 1,
+        };
 
         const els = {
             adminLock: document.getElementById("adminLock"),
@@ -437,6 +442,7 @@
             courseChart: document.getElementById("courseChart"),
             courseCountPill: document.getElementById("courseCountPill"),
             coursesBody: document.getElementById("coursesBody"),
+            coursesPagination: document.getElementById("coursesPagination"),
             addCourseForm: document.getElementById("addCourseForm"),
             attemptsBody: document.getElementById("attemptsBody"),
             lastAttemptPill: document.getElementById("lastAttemptPill"),
@@ -654,15 +660,60 @@
             `).join("");
         }
 
+        function renderPagination(container, pageKey, totalItems, onPageChange) {
+            if (!container) return;
+
+            const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+            tablePages[pageKey] = Math.min(Math.max(1, tablePages[pageKey] || 1), totalPages);
+
+            if (totalItems <= PAGE_SIZE) {
+                container.innerHTML = "";
+                return;
+            }
+
+            const currentPage = tablePages[pageKey];
+            const start = (currentPage - 1) * PAGE_SIZE + 1;
+            const end = Math.min(currentPage * PAGE_SIZE, totalItems);
+
+            container.innerHTML = `
+                <span class="pagination-info">Showing ${start}-${end} of ${totalItems}</span>
+                <div class="pagination-buttons">
+                    <button class="mini-btn" type="button" data-page-prev="${pageKey}" ${currentPage === 1 ? "disabled" : ""}>
+                        <i class="bx bx-chevron-left"></i> Previous
+                    </button>
+                    <span class="pagination-page">Page ${currentPage} of ${totalPages}</span>
+                    <button class="mini-btn" type="button" data-page-next="${pageKey}" ${currentPage === totalPages ? "disabled" : ""}>
+                        Next <i class="bx bx-chevron-right"></i>
+                    </button>
+                </div>
+            `;
+
+            container.querySelector("[data-page-prev]")?.addEventListener("click", () => {
+                tablePages[pageKey] -= 1;
+                onPageChange();
+            });
+
+            container.querySelector("[data-page-next]")?.addEventListener("click", () => {
+                tablePages[pageKey] += 1;
+                onPageChange();
+            });
+        }
+
         function renderCourses(courses) {
             els.courseCountPill.textContent = `${courses.length} courses`;
 
             if (!courses.length) {
                 els.coursesBody.innerHTML = `<tr><td colspan="4"><div class="empty">No courses yet.</div></td></tr>`;
+                if (els.coursesPagination) els.coursesPagination.innerHTML = "";
                 return;
             }
 
-            els.coursesBody.innerHTML = courses.map((course) => `
+            const totalPages = Math.max(1, Math.ceil(courses.length / PAGE_SIZE));
+            tablePages.courses = Math.min(Math.max(1, tablePages.courses || 1), totalPages);
+            const pageStart = (tablePages.courses - 1) * PAGE_SIZE;
+            const visibleCourses = courses.slice(pageStart, pageStart + PAGE_SIZE);
+
+            els.coursesBody.innerHTML = visibleCourses.map((course) => `
                 <tr>
                     <td><strong>${course.course_code}</strong></td>
                     <td>${course.course_title}</td>
@@ -677,6 +728,10 @@
                     </td>
                 </tr>
             `).join("");
+
+            renderPagination(els.coursesPagination, "courses", courses.length, () => {
+                renderCourses(dashboardData?.courses || []);
+            });
         }
 
         function renderTopStudents(students) {
@@ -797,6 +852,10 @@
 
         function renderDashboard(data) {
             dashboardData = data;
+            tablePages.courses = Math.min(
+                tablePages.courses || 1,
+                Math.max(1, Math.ceil((data.courses || []).length / PAGE_SIZE))
+            );
             renderCards(data.summary || {});
             renderStudents(data.recent_students || []);
             renderTopStudents(data.top_students || []);
