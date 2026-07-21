@@ -1477,9 +1477,14 @@ def admin_dashboard():
         recent_students = cursor.fetchall()
 
         cursor.execute("""
-            SELECT course_id, course_code, course_title, is_active, created_at
-            FROM courses
-            ORDER BY course_title ASC, course_code ASC
+            SELECT c.course_id, c.course_code, c.course_title, c.is_active, c.created_at
+            FROM courses c
+            JOIN (
+                SELECT UPPER(course_code) AS course_code_key, MIN(course_id) AS course_id
+                FROM courses
+                GROUP BY UPPER(course_code)
+            ) unique_courses ON unique_courses.course_id = c.course_id
+            ORDER BY c.course_title ASC, c.course_code ASC
         """)
         courses = cursor.fetchall()
 
@@ -1935,6 +1940,10 @@ def admin_create_course():
 
     try:
         cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT course_id FROM courses WHERE UPPER(course_code) = %s LIMIT 1", (course_code,))
+        if cursor.fetchone():
+            return jsonify({"success": False, "message": "Course code already exists."}), 409
+
         cursor.execute("""
             INSERT INTO courses (course_code, course_title, is_active)
             VALUES (%s, %s, 1)
@@ -1980,17 +1989,20 @@ def admin_update_course(course_id):
 
     try:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT course_id FROM courses WHERE course_id = %s", (course_id,))
-        if not cursor.fetchone():
+        cursor.execute("SELECT course_id, course_code FROM courses WHERE course_id = %s", (course_id,))
+        existing_course = cursor.fetchone()
+        if not existing_course:
             return jsonify({"success": False, "message": "Course not found."}), 404
 
-        values.append(course_id)
-        cursor.execute(f"UPDATE courses SET {', '.join(fields)} WHERE course_id = %s", tuple(values))
+        values.append(str(existing_course["course_code"]).upper())
+        cursor.execute(f"UPDATE courses SET {', '.join(fields)} WHERE UPPER(course_code) = %s", tuple(values))
         conn.commit()
 
         return jsonify({"success": True, "message": "Course updated."})
     except Error as e:
         print(f"[DB ADMIN UPDATE COURSE ERROR] {e}")
+        if "Data too long" in str(e):
+            return jsonify({"success": False, "message": "Course title is too long."}), 400
         return jsonify({"success": False, "message": "Could not update course."}), 500
     finally:
         conn.close()
