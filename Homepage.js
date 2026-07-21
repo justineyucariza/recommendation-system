@@ -232,6 +232,7 @@ function setAvatarDisplay(imageEl, fallbackEl, imageUrl, initials) {
 
 const app = {
   currentStep: 1,
+  currentTab: 0,
 
   currentQuestion: 0,
 
@@ -393,6 +394,14 @@ async function initializeStudentDashboard() {
 
 initializeStudentDashboard();
 
+function syncHomeOnlySections() {
+  const shouldShow = app.currentTab === 0;
+  ["welcome-banner-wrapper", "featuredContentCard", "profileCompletionCard"].forEach((id) => {
+    const element = document.getElementById(id);
+    if (element) element.classList.toggle("hidden", !shouldShow);
+  });
+}
+
 async function loadFeaturedContent() {
   const card = document.getElementById("featuredContentCard");
   if (!card) return;
@@ -418,6 +427,7 @@ async function loadFeaturedContent() {
     }
     card.classList.add("featured-content-empty");
     card.classList.remove("hidden");
+    syncHomeOnlySections();
   };
 
   try {
@@ -454,6 +464,7 @@ async function loadFeaturedContent() {
     }
     card.classList.remove("featured-content-empty");
     card.classList.remove("hidden");
+    syncHomeOnlySections();
 
     const seenKey = `acadSyncSeenFeaturedContent:${item.id}`;
     if (item.id && localStorage.getItem(seenKey) !== "1") {
@@ -672,6 +683,8 @@ function updateStepNodes(step) {
 }
 
 function switchTab(tabIndex) {
+  app.currentTab = tabIndex;
+
   document.querySelectorAll(".nav-item").forEach((btn, index) => {
     btn.classList.toggle("active", index === tabIndex);
   });
@@ -692,6 +705,7 @@ function switchTab(tabIndex) {
     case 0:
       homeView.classList.remove("hidden");
       closeCourseDetails();
+      syncHomeOnlySections();
       break;
 
     case 1:
@@ -700,6 +714,7 @@ function switchTab(tabIndex) {
       search.classList.remove("hidden");
       closeCourseDetails();
       handleSearchAndFilter();
+      syncHomeOnlySections();
       break;
 
     case 2:
