@@ -293,6 +293,12 @@ async function loadFeaturedContent() {
     }
     card.classList.remove("featured-content-empty");
     card.classList.remove("hidden");
+
+    const seenKey = `acadSyncSeenFeaturedContent:${item.id}`;
+    if (item.id && localStorage.getItem(seenKey) !== "1") {
+      showNotification(`New ${formatFeaturedType(item.content_type).toLowerCase()}: ${item.title || "Announcement"}`, "success");
+      localStorage.setItem(seenKey, "1");
+    }
   } catch (err) {
     showEmptyFeaturedContent();
   }

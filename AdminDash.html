@@ -6,7 +6,7 @@
     <title>AcadSync Admin Dashboard</title>
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <link rel="icon" href="Acadsync.jpg">
-    <link rel="stylesheet" href="AdminDash.css?v=20260713-announcement-media">
+    <link rel="stylesheet" href="AdminDash.css?v=20260721-featured-remove">
 </head>
 <body>
     <div class="admin-lock hidden" id="adminLock">
@@ -114,7 +114,6 @@
                 <button class="nav-item" type="button" data-view="courses"><i class="bx bx-book-open"></i> Course Management</button>
                 <button class="nav-item" type="button" data-view="results"><i class="bx bx-list-check"></i> Results Monitoring</button>
                 <button class="nav-item" type="button" data-view="featured"><i class="bx bx-megaphone"></i> Featured Content</button>
-                <a class="sidebar-link" href="Homepage.html" data-confirm-exit="Homepage.html"><i class="bx bx-home"></i> Student View</a>
             </nav>
 
             <div class="sidebar-note">
@@ -299,8 +298,13 @@
                             <input name="image_url" type="url" placeholder="Optional image URL">
                             <input name="link_url" type="url" placeholder="Optional link URL">
                             <textarea name="message" placeholder="Write the announcement students will see..." required></textarea>
+                            <label class="inline-check featured-notify-option">
+                                <input name="notify_students" type="checkbox" value="1" checked>
+                                <span>Email active students</span>
+                            </label>
                             <button class="btn primary" type="submit"><i class="bx bx-send"></i> Publish</button>
                         </form>
+                        <div class="featured-publish-notice hidden" id="featuredPublishNotice" aria-live="polite"></div>
                         <div class="table-wrap">
                             <table>
                                 <thead>
@@ -421,6 +425,7 @@
             featuredCountPill: document.getElementById("featuredCountPill"),
             featuredBody: document.getElementById("featuredBody"),
             addFeaturedForm: document.getElementById("addFeaturedForm"),
+            featuredPublishNotice: document.getElementById("featuredPublishNotice"),
             studentSearch: document.getElementById("studentSearch"),
             refreshBtn: document.getElementById("refreshBtn"),
         };
@@ -707,6 +712,12 @@
                 .replace(/\b\w/g, (letter) => letter.toUpperCase());
         }
 
+        function showFeaturedNotice(message, type = "success") {
+            if (!els.featuredPublishNotice) return;
+            els.featuredPublishNotice.textContent = message;
+            els.featuredPublishNotice.className = `featured-publish-notice ${type}`;
+        }
+
         function escapeHtml(value) {
             return String(value ?? "")
                 .replace(/&/g, "&amp;")
@@ -743,6 +754,9 @@
                         <div class="row-actions">
                             <button class="mini-btn ${item.is_active ? "danger" : "success"}" type="button" data-toggle-featured="${item.id}" data-active="${item.is_active ? "0" : "1"}">
                                 ${item.is_active ? "Hide" : "Show"}
+                            </button>
+                            <button class="mini-btn danger ghost" type="button" data-delete-featured="${item.id}" data-title="${escapeHtml(item.title)}">
+                                Remove
                             </button>
                         </div>
                     </td>
@@ -1078,12 +1092,26 @@
 
         els.featuredBody.addEventListener("click", async (event) => {
             const toggleButton = event.target.closest("[data-toggle-featured]");
-            if (!toggleButton) return;
+            const deleteButton = event.target.closest("[data-delete-featured]");
+            if (!toggleButton && !deleteButton) return;
 
             try {
-                await saveFeaturedContent(toggleButton.dataset.toggleFeatured, { is_active: toggleButton.dataset.active === "1" });
+                if (toggleButton) {
+                    await saveFeaturedContent(toggleButton.dataset.toggleFeatured, { is_active: toggleButton.dataset.active === "1" });
+                    return;
+                }
+
+                const title = deleteButton.dataset.title || "this announcement";
+                if (!window.confirm(`Remove "${title}" permanently?`)) return;
+
+                await adminRequest(`/api/admin/featured-content/${deleteButton.dataset.deleteFeatured}`, {
+                    method: "DELETE",
+                });
+                showFeaturedNotice("Announcement removed.", "success");
+                await loadDashboard();
             } catch (error) {
                 els.statusLine.textContent = error.message || "Could not update featured content.";
+                showFeaturedNotice(error.message || "Could not update featured content.", "danger");
             }
         });
 
@@ -1091,16 +1119,40 @@
             event.preventDefault();
             const formData = new FormData(els.addFeaturedForm);
             const payload = Object.fromEntries(formData.entries());
+            payload.notify_students = formData.has("notify_students");
+            showFeaturedNotice(
+                payload.notify_students
+                    ? "Publishing announcement and sending email notifications..."
+                    : "Publishing announcement without email notifications...",
+                "info"
+            );
 
             try {
-                await adminRequest("/api/admin/featured-content", {
+                const result = await adminRequest("/api/admin/featured-content", {
                     method: "POST",
                     body: JSON.stringify(payload),
                 });
                 els.addFeaturedForm.reset();
+                els.addFeaturedForm.querySelector('[name="notify_students"]').checked = true;
                 await loadDashboard();
+                els.statusLine.textContent = result.message || "Featured content published.";
+                const emailSummary = result.email_summary;
+                if (emailSummary) {
+                    if (emailSummary.sent > 0 && emailSummary.failed === 0) {
+                        showFeaturedNotice(`Announcement published. Email notification sent to ${emailSummary.sent} student(s).`, "success");
+                    } else if (emailSummary.sent > 0 && emailSummary.failed > 0) {
+                        showFeaturedNotice(`Announcement published. Email sent to ${emailSummary.sent} student(s), but failed for ${emailSummary.failed}.`, "warning");
+                    } else if (emailSummary.requested === 0) {
+                        showFeaturedNotice("Announcement published. No active student emails were found.", "warning");
+                    } else {
+                        showFeaturedNotice(`Announcement published, but email notifications were not sent. ${emailSummary.error || "Please check email settings."}`, "warning");
+                    }
+                } else {
+                    showFeaturedNotice("Announcement published. Email notifications were skipped.", "info");
+                }
             } catch (error) {
                 els.statusLine.textContent = error.message || "Could not publish featured content.";
+                showFeaturedNotice(error.message || "Could not publish featured content.", "danger");
             }
         });
 

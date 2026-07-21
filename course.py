@@ -395,6 +395,71 @@ def send_assessment_result_email(to_email, name, result):
     )
 
 
+def send_announcement_email(to_email, name, title, message, content_type="announcement", link_url=""):
+    type_label = str(content_type or "announcement").replace("_", " ").title()
+    link_text = f"\nRead more: {link_url}\n" if link_url else ""
+
+    send_email(
+        to_email,
+        f"AcadSync {type_label}: {title}",
+        (
+            f"Hello {name or 'student'},\n\n"
+            f"{title}\n\n"
+            f"{message}\n"
+            f"{link_text}\n"
+            "Please sign in to AcadSync to view the latest update.\n\n"
+            "AcadSync"
+        )
+    )
+
+
+def notify_students_about_announcement(cursor, title, message, content_type, link_url):
+    cursor.execute("""
+        SELECT first_name, last_name, email
+        FROM users
+        WHERE COALESCE(is_active, 1) = 1
+          AND email IS NOT NULL
+          AND email <> ''
+        ORDER BY studentID ASC
+    """)
+    students = cursor.fetchall()
+
+    summary = {
+        "requested": len(students),
+        "sent": 0,
+        "failed": 0,
+        "error": ""
+    }
+
+    if not students:
+        return summary
+
+    if not is_email_configured():
+        summary["failed"] = len(students)
+        summary["error"] = "Email service is not configured."
+        return summary
+
+    for student in students:
+        try:
+            name = format_full_name(student.get("first_name"), student.get("last_name"))
+            send_announcement_email(
+                student["email"],
+                name,
+                title,
+                message,
+                content_type,
+                link_url
+            )
+            summary["sent"] += 1
+        except Exception as e:
+            summary["failed"] += 1
+            if not summary["error"]:
+                summary["error"] = public_email_error_message(e)
+            print(f"[EMAIL ANNOUNCEMENT ERROR] {student.get('email')}: {e}")
+
+    return summary
+
+
 def parse_valid_grade(value):
     try:
         grade = int(str(value).strip())
@@ -1561,6 +1626,7 @@ def admin_create_featured_content():
     content_type = data.get("content_type", "announcement").strip() or "announcement"
     image_url = data.get("image_url", "").strip()
     link_url = data.get("link_url", "").strip()
+    notify_students = is_truthy(data.get("notify_students", True))
     allowed_types = {"announcement", "important_update", "highlighted_course"}
 
     if not title or not message:
@@ -1578,13 +1644,37 @@ def admin_create_featured_content():
         return jsonify({"success": False, "message": "Database connection failed."}), 500
 
     try:
-        cursor = conn.cursor()
+        cursor = conn.cursor(dictionary=True)
         cursor.execute("""
             INSERT INTO featured_content (title, message, content_type, image_url, link_url, is_active)
             VALUES (%s, %s, %s, %s, %s, 1)
         """, (title, message, content_type, image_url or None, link_url or None))
+        featured_id = cursor.lastrowid
         conn.commit()
-        return jsonify({"success": True, "message": "Featured content published.", "id": cursor.lastrowid})
+
+        email_summary = None
+        if notify_students:
+            email_summary = notify_students_about_announcement(
+                cursor,
+                title,
+                message,
+                content_type,
+                link_url
+            )
+
+        response_message = "Featured content published."
+        if email_summary:
+            if email_summary["sent"]:
+                response_message += f" Email sent to {email_summary['sent']} student(s)."
+            if email_summary["failed"]:
+                response_message += f" Email failed for {email_summary['failed']} student(s)."
+
+        return jsonify({
+            "success": True,
+            "message": response_message,
+            "id": featured_id,
+            "email_summary": email_summary
+        })
     except Error as e:
         print(f"[DB ADMIN FEATURED CREATE ERROR] {e}")
         return jsonify({"success": False, "message": "Could not publish featured content."}), 500
@@ -1626,6 +1716,32 @@ def admin_update_featured_content(content_id):
     except Error as e:
         print(f"[DB ADMIN FEATURED UPDATE ERROR] {e}")
         return jsonify({"success": False, "message": "Could not update featured content."}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/admin/featured-content/<int:content_id>', methods=['DELETE'])
+def admin_delete_featured_content(content_id):
+    admin, auth_error = require_admin_user()
+    if auth_error:
+        return auth_error
+
+    conn = get_db()
+    if not conn:
+        return jsonify({"success": False, "message": "Database connection failed."}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id FROM featured_content WHERE id = %s", (content_id,))
+        if not cursor.fetchone():
+            return jsonify({"success": False, "message": "Featured content not found."}), 404
+
+        cursor.execute("DELETE FROM featured_content WHERE id = %s", (content_id,))
+        conn.commit()
+        return jsonify({"success": True, "message": "Announcement removed."})
+    except Error as e:
+        print(f"[DB ADMIN FEATURED DELETE ERROR] {e}")
+        return jsonify({"success": False, "message": "Could not remove featured content."}), 500
     finally:
         conn.close()
 
