@@ -6,7 +6,7 @@
     <title>AcadSync Admin Dashboard</title>
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <link rel="icon" href="Acadsync.jpg">
-    <link rel="stylesheet" href="AdminDash.css?v=20260721-course-pagination">
+    <link rel="stylesheet" href="AdminDash.css?v=20260721-course-actions">
 </head>
 <body>
     <div class="admin-lock hidden" id="adminLock">
@@ -1013,11 +1013,12 @@
         }
 
         async function saveCourse(courseId, updates) {
-            await adminRequest(`/api/admin/courses/${courseId}`, {
+            const result = await adminRequest(`/api/admin/courses/${courseId}`, {
                 method: "PATCH",
                 body: JSON.stringify(updates),
             });
             await loadDashboard();
+            return result;
         }
 
         async function saveFeaturedContent(featuredId, updates) {
@@ -1178,7 +1179,8 @@
 
             try {
                 if (toggleButton) {
-                    await saveCourse(toggleButton.dataset.toggleCourse, { is_active: toggleButton.dataset.active === "1" });
+                    const result = await saveCourse(toggleButton.dataset.toggleCourse, { is_active: toggleButton.dataset.active === "1" });
+                    els.statusLine.textContent = result.message || "Course status updated.";
                 }
 
                 if (editButton) {
@@ -1186,7 +1188,8 @@
                     if (!course) return;
                     const courseTitle = prompt("Course title", course.course_title || "");
                     if (courseTitle === null) return;
-                    await saveCourse(course.course_id, { course_title: courseTitle });
+                    const result = await saveCourse(course.course_id, { course_title: courseTitle });
+                    els.statusLine.textContent = result.message || "Course updated.";
                 }
             } catch (error) {
                 els.statusLine.textContent = error.message || "Could not update course.";
@@ -1216,12 +1219,13 @@
             const payload = Object.fromEntries(formData.entries());
 
             try {
-                await adminRequest("/api/admin/courses", {
+                const result = await adminRequest("/api/admin/courses", {
                     method: "POST",
                     body: JSON.stringify(payload),
                 });
                 els.addCourseForm.reset();
                 await loadDashboard();
+                els.statusLine.textContent = result.message || "Course added.";
             } catch (error) {
                 els.statusLine.textContent = error.message || "Could not add course.";
             }

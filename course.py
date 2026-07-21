@@ -1940,9 +1940,17 @@ def admin_create_course():
 
     try:
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT course_id FROM courses WHERE UPPER(course_code) = %s LIMIT 1", (course_code,))
-        if cursor.fetchone():
-            return jsonify({"success": False, "message": "Course code already exists."}), 409
+        cursor.execute("SELECT course_id FROM courses WHERE UPPER(course_code) = %s", (course_code,))
+        existing_rows = cursor.fetchall()
+        if existing_rows:
+            course_ids = [row["course_id"] for row in existing_rows]
+            placeholders = ", ".join(["%s"] * len(course_ids))
+            cursor.execute(
+                f"UPDATE courses SET course_title = %s, is_active = 1 WHERE course_id IN ({placeholders})",
+                tuple([course_title] + course_ids)
+            )
+            conn.commit()
+            return jsonify({"success": True, "message": "Course already existed, so it was updated and activated."})
 
         cursor.execute("""
             INSERT INTO courses (course_code, course_title, is_active)
@@ -1994,11 +2002,20 @@ def admin_update_course(course_id):
         if not existing_course:
             return jsonify({"success": False, "message": "Course not found."}), 404
 
-        values.append(str(existing_course["course_code"]).upper())
-        cursor.execute(f"UPDATE courses SET {', '.join(fields)} WHERE UPPER(course_code) = %s", tuple(values))
+        cursor.execute(
+            "SELECT course_id FROM courses WHERE UPPER(course_code) = %s",
+            (str(existing_course["course_code"]).upper(),)
+        )
+        matching_rows = cursor.fetchall()
+        course_ids = [row["course_id"] for row in matching_rows] or [course_id]
+        placeholders = ", ".join(["%s"] * len(course_ids))
+        cursor.execute(
+            f"UPDATE courses SET {', '.join(fields)} WHERE course_id IN ({placeholders})",
+            tuple(values + course_ids)
+        )
         conn.commit()
 
-        return jsonify({"success": True, "message": "Course updated."})
+        return jsonify({"success": True, "message": "Course updated.", "updated_count": cursor.rowcount})
     except Error as e:
         print(f"[DB ADMIN UPDATE COURSE ERROR] {e}")
         if "Data too long" in str(e):
