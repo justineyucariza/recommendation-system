@@ -73,7 +73,7 @@
                         type="button">
 
                         <i class="bx bx-cog" aria-hidden="true"></i>
-                        <span>Settings</span>
+                        <span data-i18n="settings">Settings</span>
 
                     </button>
 
@@ -83,7 +83,7 @@
                         type="button">
 
                         <i class="bx bx-log-out" aria-hidden="true"></i>
-                        <span>Logout</span>
+                        <span data-i18n="logout">Logout</span>
 
                     </button>
 
@@ -107,7 +107,7 @@
                 onclick="switchTab(0)">
 
                 <i class="bx bx-home-alt" aria-hidden="true"></i>
-                <span>Home</span>
+                <span data-i18n="home">Home</span>
 
             </button>
 
@@ -117,7 +117,7 @@
                 onclick="switchTab(1)">
 
                 <i class="bx bx-book-open" aria-hidden="true"></i>
-                <span>Course Catalog</span>
+                <span data-i18n="courseCatalog">Course Catalog</span>
 
             </button>
 
@@ -127,7 +127,7 @@
                 onclick="switchTab(2)">
 
                 <i class="bx bx-edit-alt" aria-hidden="true"></i>
-                <span>Assessment Quiz</span>
+                <span data-i18n="assessmentQuiz">Assessment Quiz</span>
 
             </button>
 
@@ -137,7 +137,7 @@
                 onclick="switchTab(3)">
 
                 <i class="bx bx-trophy" aria-hidden="true"></i>
-                <span>Leaderboard</span>
+                <span data-i18n="leaderboard">Leaderboard</span>
 
             </button>
 
@@ -162,7 +162,7 @@
                     <div class="filter-header">
 
                         <i class="bx bx-slider-alt" aria-hidden="true"></i>
-                        <span>Filters</span>
+                        <span data-i18n="filters">Filters</span>
 
                     </div>
 
@@ -172,7 +172,7 @@
                             class="filter-opt active"
                             data-filter="all">
 
-                            All Courses
+                            <span data-i18n="allCourses">All Courses</span>
 
                         </li>
 
@@ -299,19 +299,19 @@
                             <img id="featuredContentImage" class="featured-content-image hidden" src="" alt="">
                             <div class="featured-content-copy">
                                 <span id="featuredContentType">Featured Content</span>
-                                <h3 id="featuredContentTitle">Announcement</h3>
+                                <h3 id="featuredContentTitle" data-i18n="announcement">Announcement</h3>
                                 <p id="featuredContentMessage"></p>
                                 <a id="featuredContentLink" class="featured-content-link hidden" href="#" target="_blank" rel="noopener">
-                                    Open details <i class="bx bx-link-external" aria-hidden="true"></i>
+                                    <span data-i18n="openDetails">Open details</span> <i class="bx bx-link-external" aria-hidden="true"></i>
                                 </a>
                             </div>
                         </section>
 
                         <div class="student-progress-card">
                             <div class="student-progress-copy">
-                                <span>Profile Completion</span>
-                                <strong id="profileCompletionText">Checking profile...</strong>
-                                <p id="profileCompletionHint">Complete your profile and assessment to get better recommendations.</p>
+                                <span data-i18n="profileCompletion">Profile Completion</span>
+                                <strong id="profileCompletionText" data-i18n="checkingProfile">Checking profile...</strong>
+                                <p id="profileCompletionHint" data-i18n="profileCompletionDefault">Complete your profile and assessment to get better recommendations.</p>
                             </div>
 
                             <div class="student-progress-meter" aria-hidden="true">
@@ -1457,7 +1457,7 @@
                 id="cancelLogoutBtn"
                 class="btn-modal btn-modal-cancel">
 
-                Cancel
+                <span data-i18n="cancel">Cancel</span>
 
             </button>
 
@@ -1504,7 +1504,7 @@
                 id="cancelRetakeBtn"
                 class="btn-modal btn-modal-cancel">
 
-                Cancel
+                <span data-i18n="cancel">Cancel</span>
 
             </button>
 
@@ -1751,7 +1751,7 @@
         <div class="modal-header">
 
             <i class="bx bx-cog" aria-hidden="true"></i>
-            <span>Portal Settings</span>
+            <span data-i18n="portalSettings">Portal Settings</span>
 
         </div>
 
@@ -1762,7 +1762,7 @@
                 <label>
 
                     <i class="bx bx-image" aria-hidden="true"></i>
-                    <span>Profile Picture</span>
+                    <span data-i18n="profilePicture">Profile Picture</span>
 
                 </label>
 
@@ -1787,12 +1787,12 @@
                         id="chooseProfileBtn"
                         class="btn-settings-link">
 
-                        Upload / Change Picture
+                        <span data-i18n="uploadChangePicture">Upload / Change Picture</span>
 
                     </button>
 
                     <p class="profile-picture-hint">
-                        PNG, JPG, JPEG, GIF, or WEBP up to 5 MB.
+                        <span data-i18n="profilePictureHint">PNG, JPG, JPEG, GIF, or WEBP up to 5 MB.</span>
                     </p>
 
                 </div>
@@ -1804,7 +1804,7 @@
                 <label for="settings-darkmode">
 
                     <i class="bx bx-moon" aria-hidden="true"></i>
-                    <span>Dark Mode</span>
+                    <span data-i18n="darkMode">Dark Mode</span>
 
                 </label>
 
@@ -1819,7 +1819,7 @@
                 <label for="settings-lang">
 
                     <i class="bx bx-globe" aria-hidden="true"></i>
-                    <span>Language</span>
+                    <span data-i18n="language">Language</span>
 
                 </label>
 
@@ -1846,7 +1846,7 @@
                 <label for="settings-notify">
 
                     <i class="bx bx-envelope" aria-hidden="true"></i>
-                    <span>Email Notifications</span>
+                    <span data-i18n="emailNotifications">Email Notifications</span>
 
                 </label>
 
@@ -1862,7 +1862,7 @@
                 <label>
 
                     <i class="bx bx-key" aria-hidden="true"></i>
-                    <span>Password</span>
+                    <span data-i18n="password">Password</span>
 
                 </label>
 
@@ -1871,7 +1871,7 @@
                     id="openChangePwdBtn"
                     class="btn-settings-link">
 
-                    Change Password
+                    <span data-i18n="changePassword">Change Password</span>
 
                 </button>
 
@@ -1884,21 +1884,21 @@
             <div class="quiz-history-header">
 
                 <div>
-                    <h3>Quiz History</h3>
+                    <h3 data-i18n="quizHistory">Quiz History</h3>
 
-                    <p>Review every saved recommendation attempt.</p>
+                    <p data-i18n="quizHistoryHelp">Review every saved recommendation attempt.</p>
                 </div>
 
                 <button type="button" id="clearQuizHistoryBtn" class="btn-history-clear">
                     <i class="bx bx-trash" aria-hidden="true"></i>
-                    <span>Clear History</span>
+                    <span data-i18n="clearHistory">Clear History</span>
                 </button>
 
             </div>
 
             <div id="quizHistoryList" class="quiz-history-list">
                 <div class="quiz-history-empty">
-                    No quiz history yet.
+                    <span data-i18n="noQuizHistory">No quiz history yet.</span>
                 </div>
             </div>
 
@@ -1911,7 +1911,7 @@
                 id="cancelSettingsBtn"
                 class="btn-modal btn-modal-cancel">
 
-                Cancel
+                <span data-i18n="cancel">Cancel</span>
 
             </button>
 
@@ -1920,7 +1920,7 @@
                 id="saveSettingsBtn"
                 class="btn-modal btn-modal-confirm">
 
-                Save Changes
+                <span data-i18n="saveChanges">Save Changes</span>
 
             </button>
 
@@ -1937,16 +1937,16 @@
         <div class="modal-header">
 
             <i class="bx bx-trash" aria-hidden="true"></i>
-            <span>Clear Quiz History</span>
+            <span data-i18n="clearQuizHistory">Clear Quiz History</span>
 
         </div>
 
         <div class="modal-body">
 
-            <h3>Are you sure you want to clear your quiz history?</h3>
+            <h3 data-i18n="clearHistoryQuestion">Are you sure you want to clear your quiz history?</h3>
 
             <p class="modal-description">
-                This deletes only your saved quiz attempts. Other students' records will not be changed.
+                <span data-i18n="clearHistoryDescription">This deletes only your saved quiz attempts. Other students' records will not be changed.</span>
             </p>
 
         </div>
@@ -1954,11 +1954,11 @@
         <div class="modal-footer">
 
             <button type="button" id="cancelClearHistoryBtn" class="btn-modal btn-modal-cancel">
-                Cancel
+                <span data-i18n="cancel">Cancel</span>
             </button>
 
             <button type="button" id="confirmClearHistoryBtn" class="btn-modal btn-modal-danger">
-                Clear History
+                <span data-i18n="clearHistory">Clear History</span>
             </button>
 
         </div>
@@ -1975,7 +1975,7 @@
 
 </div>
 
-<script src="Homepage.js?v=20260721-announcement-toast"></script>
+<script src="Homepage.js?v=20260721-language-switch"></script>
 
 </body>
 </html>

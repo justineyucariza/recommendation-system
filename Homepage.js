@@ -51,9 +51,168 @@ function formatDateTime(value) {
 }
 
 function formatFeaturedType(value) {
-  return String(value || "Featured Content")
+  const key = `featuredType.${value || "featured_content"}`;
+  const translated = t(key);
+  if (translated !== key) return translated;
+
+  return String(value || t("featuredContent"))
     .replace(/_/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+const LANGUAGE_STORAGE_KEY = "acadsync-language";
+const translations = {
+  en: {
+    settings: "Settings",
+    logout: "Logout",
+    home: "Home",
+    courseCatalog: "Course Catalog",
+    assessmentQuiz: "Assessment Quiz",
+    leaderboard: "Leaderboard",
+    filters: "Filters",
+    allCourses: "All Courses",
+    featuredContent: "Featured Content",
+    announcement: "Announcement",
+    openDetails: "Open details",
+    profileCompletion: "Profile Completion",
+    profileCompletionDefault: "Complete your profile and assessment to get better recommendations.",
+    checkingProfile: "Checking profile...",
+    portalSettings: "Portal Settings",
+    profilePicture: "Profile Picture",
+    uploadChangePicture: "Upload / Change Picture",
+    profilePictureHint: "PNG, JPG, JPEG, GIF, or WEBP up to 5 MB.",
+    darkMode: "Dark Mode",
+    language: "Language",
+    emailNotifications: "Email Notifications",
+    password: "Password",
+    changePassword: "Change Password",
+    quizHistory: "Quiz History",
+    quizHistoryHelp: "Review every saved recommendation attempt.",
+    clearHistory: "Clear History",
+    noQuizHistory: "No quiz history yet.",
+    clearQuizHistory: "Clear Quiz History",
+    clearHistoryQuestion: "Are you sure you want to clear your quiz history?",
+    clearHistoryDescription: "This deletes only your saved quiz attempts. Other students' records will not be changed.",
+    cancel: "Cancel",
+    saveChanges: "Save Changes",
+    settingsSaved: "Settings saved.",
+    noAnnouncements: "No announcements yet",
+    noAnnouncementsMessage: "Important updates from AcadSync will appear here once an admin publishes them.",
+    featuredImageAlt: "Featured content image",
+    newFeaturedToast: "New {type}: {title}",
+    completeText: "{percent}% complete",
+    completeProfileDone: "Great job. Your profile and assessment history are complete.",
+    completeProfileMissing: "Missing: {items}. Complete these for a richer profile.",
+    itemName: "name",
+    itemStrand: "strand",
+    itemProfilePicture: "profile picture",
+    itemAssessmentHistory: "assessment history",
+    quizHistoryLoading: "Loading quiz history...",
+    quizHistoryLoadError: "Could not load quiz history.",
+    featuredType: {
+      announcement: "Announcement",
+      important_update: "Important Update",
+      highlighted_course: "Highlighted Course",
+      featured_content: "Featured Content",
+    },
+  },
+  tl: {
+    settings: "Mga Setting",
+    logout: "Mag-logout",
+    home: "Home",
+    courseCatalog: "Listahan ng Kurso",
+    assessmentQuiz: "Pagsusulit sa Assessment",
+    leaderboard: "Leaderboard",
+    filters: "Mga Filter",
+    allCourses: "Lahat ng Kurso",
+    featuredContent: "Mahalagang Anunsyo",
+    announcement: "Anunsyo",
+    openDetails: "Buksan ang detalye",
+    profileCompletion: "Pagkumpleto ng Profile",
+    profileCompletionDefault: "Kumpletuhin ang iyong profile at assessment para sa mas magandang rekomendasyon.",
+    checkingProfile: "Sinusuri ang profile...",
+    portalSettings: "Mga Setting ng Portal",
+    profilePicture: "Larawan ng Profile",
+    uploadChangePicture: "Mag-upload / Palitan ang Larawan",
+    profilePictureHint: "PNG, JPG, JPEG, GIF, o WEBP hanggang 5 MB.",
+    darkMode: "Dark Mode",
+    language: "Wika",
+    emailNotifications: "Mga Notification sa Email",
+    password: "Password",
+    changePassword: "Palitan ang Password",
+    quizHistory: "Kasaysayan ng Quiz",
+    quizHistoryHelp: "Tingnan ang lahat ng naka-save na recommendation attempt.",
+    clearHistory: "Burahin ang History",
+    noQuizHistory: "Wala pang quiz history.",
+    clearQuizHistory: "Burahin ang Quiz History",
+    clearHistoryQuestion: "Sigurado ka bang gusto mong burahin ang iyong quiz history?",
+    clearHistoryDescription: "Ang iyong sariling quiz attempts lang ang mabubura. Hindi maaapektuhan ang records ng ibang estudyante.",
+    cancel: "Kanselahin",
+    saveChanges: "I-save ang Pagbabago",
+    settingsSaved: "Na-save ang settings.",
+    noAnnouncements: "Wala pang anunsyo",
+    noAnnouncementsMessage: "Dito lalabas ang mahahalagang update mula sa AcadSync kapag nag-publish ang admin.",
+    featuredImageAlt: "Larawan ng mahalagang anunsyo",
+    newFeaturedToast: "Bagong {type}: {title}",
+    completeText: "{percent}% kumpleto",
+    completeProfileDone: "Magaling. Kumpleto na ang iyong profile at assessment history.",
+    completeProfileMissing: "Kulang: {items}. Kumpletuhin ito para sa mas maayos na profile.",
+    itemName: "pangalan",
+    itemStrand: "strand",
+    itemProfilePicture: "larawan ng profile",
+    itemAssessmentHistory: "assessment history",
+    quizHistoryLoading: "Nilo-load ang quiz history...",
+    quizHistoryLoadError: "Hindi ma-load ang quiz history.",
+    featuredType: {
+      announcement: "Anunsyo",
+      important_update: "Mahalagang Update",
+      highlighted_course: "Itinatampok na Kurso",
+      featured_content: "Mahalagang Anunsyo",
+    },
+  },
+};
+
+function getSavedLanguage() {
+  return localStorage.getItem(LANGUAGE_STORAGE_KEY) || "en";
+}
+
+function t(key, replacements = {}) {
+  const language = getSavedLanguage();
+  const parts = key.split(".");
+  let value = translations[language] || translations.en;
+
+  for (const part of parts) {
+    value = value?.[part];
+  }
+
+  if (typeof value !== "string") {
+    value = translations.en;
+    for (const part of parts) {
+      value = value?.[part];
+    }
+  }
+
+  if (typeof value !== "string") return key;
+
+  return Object.entries(replacements).reduce(
+    (text, [name, replacement]) => text.replaceAll(`{${name}}`, replacement),
+    value,
+  );
+}
+
+function applyLanguage() {
+  document.documentElement.lang = getSavedLanguage() === "tl" ? "tl" : "en";
+
+  document.querySelectorAll("[data-i18n]").forEach((element) => {
+    element.textContent = t(element.dataset.i18n);
+  });
+
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
+    element.placeholder = t(element.dataset.i18nPlaceholder);
+  });
+
+  const languageSelect = document.getElementById("settings-lang");
+  if (languageSelect) languageSelect.value = getSavedLanguage();
 }
 
 function setAvatarDisplay(imageEl, fallbackEl, imageUrl, initials) {
@@ -160,6 +319,8 @@ if (footerYearEl) {
   footerYearEl.textContent = new Date().getFullYear();
 }
 
+applyLanguage();
+
 let latestRecommendationResult = null;
 let leaderboardEntries = [];
 let assessmentDraftRestoring = false;
@@ -243,9 +404,9 @@ async function loadFeaturedContent() {
   const linkEl = document.getElementById("featuredContentLink");
 
   const showEmptyFeaturedContent = () => {
-    typeEl.textContent = "Featured Content";
-    titleEl.textContent = "No announcements yet";
-    messageEl.textContent = "Important updates from AcadSync will appear here once an admin publishes them.";
+    typeEl.textContent = t("featuredContent");
+    titleEl.textContent = t("noAnnouncements");
+    messageEl.textContent = t("noAnnouncementsMessage");
     if (imageEl) {
       imageEl.classList.add("hidden");
       imageEl.removeAttribute("src");
@@ -274,7 +435,7 @@ async function loadFeaturedContent() {
     if (imageEl) {
       if (item.image_url) {
         imageEl.src = item.image_url;
-        imageEl.alt = item.title ? `${item.title} image` : "Featured content image";
+        imageEl.alt = item.title ? `${item.title} image` : t("featuredImageAlt");
         imageEl.classList.remove("hidden");
       } else {
         imageEl.classList.add("hidden");
@@ -296,7 +457,13 @@ async function loadFeaturedContent() {
 
     const seenKey = `acadSyncSeenFeaturedContent:${item.id}`;
     if (item.id && localStorage.getItem(seenKey) !== "1") {
-      showNotification(`New ${formatFeaturedType(item.content_type).toLowerCase()}: ${item.title || "Announcement"}`, "success");
+      showNotification(
+        t("newFeaturedToast", {
+          type: formatFeaturedType(item.content_type).toLowerCase(),
+          title: item.title || t("announcement"),
+        }),
+        "success",
+      );
       localStorage.setItem(seenKey, "1");
     }
   } catch (err) {
@@ -311,19 +478,19 @@ function updateProfileCompletion(hasQuizHistory) {
 
   const completionItems = [
     {
-      label: "name",
+      label: t("itemName"),
       complete: Boolean(sessionStorage.getItem("studentName")),
     },
     {
-      label: "strand",
+      label: t("itemStrand"),
       complete: Boolean(sessionStorage.getItem("studentStrand")),
     },
     {
-      label: "profile picture",
+      label: t("itemProfilePicture"),
       complete: Boolean(sessionStorage.getItem("studentProfilePicture")),
     },
     {
-      label: "assessment history",
+      label: t("itemAssessmentHistory"),
       complete: sessionStorage.getItem("studentHasQuizHistory") === "1",
     },
   ];
@@ -337,13 +504,13 @@ function updateProfileCompletion(hasQuizHistory) {
   const hintEl = document.getElementById("profileCompletionHint");
   const fillEl = document.getElementById("profileCompletionFill");
 
-  if (textEl) textEl.textContent = `${percent}% complete`;
+  if (textEl) textEl.textContent = t("completeText", { percent });
   if (fillEl) fillEl.style.width = `${percent}%`;
   if (hintEl) {
     hintEl.textContent =
       percent === 100
-        ? "Great job. Your profile and assessment history are complete."
-        : `Missing: ${missingItems.join(", ")}. Complete these for a richer profile.`;
+        ? t("completeProfileDone")
+        : t("completeProfileMissing", { items: missingItems.join(", ") });
   }
 }
 
@@ -1403,6 +1570,7 @@ document.getElementById("confirmLogoutBtn")?.addEventListener("click", () => {
 
 // Settings
 document.getElementById("settingsBtn")?.addEventListener("click", () => {
+  applyLanguage();
   openModal("settingsModal");
   syncSettingsProfilePicturePreview();
   loadQuizHistory();
@@ -1440,8 +1608,14 @@ document
   ?.addEventListener("click", async () => {
     const isDark =
       document.getElementById("settings-darkmode")?.checked || false;
+    const selectedLanguage =
+      document.getElementById("settings-lang")?.value || "en";
     localStorage.setItem("acadsync-dark-mode", isDark);
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, selectedLanguage);
     applyDarkMode(isDark);
+    applyLanguage();
+    updateProfileCompletion();
+    loadFeaturedContent();
 
     const fileInput = document.getElementById("settingsProfileInput");
     const file = fileInput && fileInput.files && fileInput.files[0];
@@ -1460,7 +1634,7 @@ document
     }
 
     closeModal("settingsModal");
-    showNotification("Settings saved.", "success");
+    showNotification(t("settingsSaved"), "success");
     loadLeaderboard();
   });
 
@@ -1636,7 +1810,7 @@ async function loadQuizHistory() {
   if (clearButton) clearButton.disabled = true;
 
   container.innerHTML =
-    '<div class="quiz-history-loading">Loading quiz history…</div>';
+    `<div class="quiz-history-loading">${t("quizHistoryLoading")}</div>`;
 
   try {
     const response = await fetch(`${API_BASE}/api/quiz-history/${studentId}`);
@@ -1644,7 +1818,7 @@ async function loadQuizHistory() {
 
     if (!data.success || !Array.isArray(data.history) || !data.history.length) {
       container.innerHTML =
-        '<div class="quiz-history-empty">No quiz history yet.</div>';
+        `<div class="quiz-history-empty">${t("noQuizHistory")}</div>`;
       updateProfileCompletion(false);
       return;
     }
@@ -1671,7 +1845,7 @@ async function loadQuizHistory() {
       .join("");
   } catch (err) {
     container.innerHTML =
-      '<div class="quiz-history-empty">Could not load quiz history.</div>';
+      `<div class="quiz-history-empty">${t("quizHistoryLoadError")}</div>`;
     updateProfileCompletion(false);
     console.error("Quiz history error:", err);
   }
