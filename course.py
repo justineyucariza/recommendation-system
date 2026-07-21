@@ -419,6 +419,54 @@ def send_announcement_email(to_email, name, title, message, content_type="announ
     )
 
 
+def send_announcement_email_batch(to_emails, title, message, content_type="announcement", link_url=""):
+    if not to_emails:
+        return
+
+    type_label = str(content_type or "announcement").replace("_", " ").title()
+    link_text = f"\nRead more: {link_url}\n" if link_url else ""
+    body = (
+        "Hello AcadSync student,\n\n"
+        f"{title}\n\n"
+        f"{message}\n"
+        f"{link_text}\n"
+        "Please sign in to AcadSync to view the latest update.\n\n"
+        "AcadSync"
+    )
+
+    if RESEND_CONFIG["api_key"] and RESEND_CONFIG["from_email"]:
+        payload = json.dumps({
+            "from": RESEND_CONFIG["from_email"],
+            "to": [RESEND_CONFIG["from_email"]],
+            "bcc": to_emails,
+            "subject": f"AcadSync {type_label}: {title}",
+            "text": body,
+        }).encode("utf-8")
+
+        resend_request = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=payload,
+            method="POST",
+            headers={
+                "Authorization": f"Bearer {RESEND_CONFIG['api_key']}",
+                "Content-Type": "application/json",
+                "User-Agent": "AcadSync/1.0 (Railway Flask app)",
+            },
+        )
+
+        try:
+            with urllib.request.urlopen(resend_request, timeout=20) as response:
+                if response.status >= 300:
+                    raise RuntimeError(f"Resend returned HTTP {response.status}.")
+        except urllib.error.HTTPError as e:
+            details = e.read().decode("utf-8", errors="replace")
+            raise RuntimeError(f"Resend email error: {details}") from e
+        return
+
+    for email in to_emails:
+        send_announcement_email(email, "student", title, message, content_type, link_url)
+
+
 def notify_students_about_announcement(cursor, title, message, content_type, link_url):
     cursor.execute("""
         SELECT first_name, last_name, email
@@ -444,6 +492,18 @@ def notify_students_about_announcement(cursor, title, message, content_type, lin
         summary["failed"] = len(students)
         summary["error"] = "Email service is not configured."
         return summary
+
+    if RESEND_CONFIG["api_key"] and RESEND_CONFIG["from_email"]:
+        try:
+            recipients = [student["email"] for student in students if student.get("email")]
+            send_announcement_email_batch(recipients, title, message, content_type, link_url)
+            summary["sent"] = len(recipients)
+            return summary
+        except Exception as e:
+            summary["failed"] = len(students)
+            summary["error"] = public_email_error_message(e)
+            print(f"[EMAIL ANNOUNCEMENT BATCH ERROR] {e}")
+            return summary
 
     for student in students:
         try:
