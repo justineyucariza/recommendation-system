@@ -198,15 +198,39 @@ async function refreshSessionProfile() {
 
     syncHeaderProfilePicture();
     syncSettingsProfilePicturePreview();
-    updateProfileCompletion();
+    if (sessionStorage.getItem("studentHasQuizHistory") !== null) {
+      updateProfileCompletion();
+    }
   } catch (err) {
     console.warn("Could not refresh profile.", err);
   }
 }
 
-refreshSessionProfile();
-updateProfileCompletion();
-loadFeaturedContent();
+async function refreshProfileCompletionStatus() {
+  const studentId = sessionStorage.getItem("studentID");
+  if (!studentId) {
+    updateProfileCompletion(false);
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/api/quiz-history/${studentId}`);
+    const data = await response.json();
+    updateProfileCompletion(
+      Boolean(response.ok && data.success && Array.isArray(data.history) && data.history.length),
+    );
+  } catch (err) {
+    updateProfileCompletion(sessionStorage.getItem("studentHasQuizHistory") === "1");
+  }
+}
+
+async function initializeStudentDashboard() {
+  await refreshSessionProfile();
+  await refreshProfileCompletionStatus();
+  loadFeaturedContent();
+}
+
+initializeStudentDashboard();
 
 async function loadFeaturedContent() {
   const card = document.getElementById("featuredContentCard");
