@@ -699,6 +699,23 @@
             });
         }
 
+        function getUniqueCourses(courses) {
+            const uniqueCourses = new Map();
+            (courses || []).forEach((course) => {
+                const code = String(course.course_code || "").trim().toUpperCase();
+                if (!code || uniqueCourses.has(code)) return;
+                uniqueCourses.set(code, {
+                    ...course,
+                    course_code: code,
+                });
+            });
+            return Array.from(uniqueCourses.values()).sort((a, b) => {
+                const titleCompare = String(a.course_title || "").localeCompare(String(b.course_title || ""));
+                if (titleCompare) return titleCompare;
+                return String(a.course_code || "").localeCompare(String(b.course_code || ""));
+            });
+        }
+
         function renderCourses(courses) {
             els.courseCountPill.textContent = `${courses.length} courses`;
 
@@ -851,17 +868,21 @@
         }
 
         function renderDashboard(data) {
-            dashboardData = data;
+            const courses = getUniqueCourses(data.courses || []);
+            dashboardData = {
+                ...data,
+                courses,
+            };
             tablePages.courses = Math.min(
                 tablePages.courses || 1,
-                Math.max(1, Math.ceil((data.courses || []).length / PAGE_SIZE))
+                Math.max(1, Math.ceil(courses.length / PAGE_SIZE))
             );
             renderCards(data.summary || {});
             renderStudents(data.recent_students || []);
             renderTopStudents(data.top_students || []);
             renderChart(els.strandChart, data.strand_distribution || [], "No strand data yet.");
             renderChart(els.courseChart, data.course_distribution || [], "No course recommendations yet.");
-            renderCourses(data.courses || []);
+            renderCourses(courses);
             renderAttempts(data.recent_attempts || []);
             renderFeaturedContent(data.featured_content || []);
         }
