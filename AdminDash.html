@@ -6,7 +6,7 @@
     <title>AcadSync Admin Dashboard</title>
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <link rel="icon" href="Acadsync.jpg">
-    <link rel="stylesheet" href="AdminDash.css?v=20260721-remove-modal">
+    <link rel="stylesheet" href="AdminDash.css?v=20260721-no-lock">
 </head>
 <body>
     <div class="admin-lock hidden" id="adminLock">
@@ -146,7 +146,6 @@
                 <div class="actions">
                     <button class="btn primary" id="refreshBtn" type="button"><i class="bx bx-refresh"></i> Refresh</button>
                     <button class="btn" id="adminSettingsBtn" type="button"><i class="bx bx-cog"></i> Settings</button>
-                    <button class="btn" id="adminLogoutBtn" type="button"><i class="bx bx-lock"></i> Lock</button>
                     <a class="btn" href="index.html" data-confirm-exit="index.html"><i class="bx bx-log-out"></i> Exit</a>
                 </div>
             </header>
@@ -398,7 +397,6 @@
             adminLoginForm: document.getElementById("adminLoginForm"),
             adminKeyInput: document.getElementById("adminKeyInput"),
             adminLoginError: document.getElementById("adminLoginError"),
-            adminLogoutBtn: document.getElementById("adminLogoutBtn"),
             adminSettingsBtn: document.getElementById("adminSettingsBtn"),
             adminSettingsModal: document.getElementById("adminSettingsModal"),
             closeAdminSettingsBtn: document.getElementById("closeAdminSettingsBtn"),
@@ -974,10 +972,6 @@
             } finally {
                 els.adminLoginForm.querySelector("button[type='submit']").disabled = false;
             }
-        });
-
-        els.adminLogoutBtn.addEventListener("click", () => {
-            openExitConfirm("index.html?admin=1");
         });
 
         els.adminSettingsBtn.addEventListener("click", openAdminSettings);
